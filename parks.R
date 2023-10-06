@@ -1,0 +1,122 @@
+# Loading packages ---- 
+options(timeout = max(1000, getOption("timeout")))
+library(lattice) # for making graphs
+library(knitr) # for knitting
+library(ggplot2) # for scatter plot
+library(dplyr) # for pipes
+library(skimr) # for skimming data
+library(tidyverse) #summing
+library(lubridate) #convert whole columns to dates
+library(zoo) #dates as year month
+library(canadianmaps) #import annotated map of Canada
+library(sf) # spatial data
+
+# set working directory
+setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/data-exploration")
+
+# importing data
+animals_involved <- read.csv("data/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
+
+# filter out all the human wildlife interactions ----
+HWI <- animals_involved %>% 
+  filter(Incident.Type %in% c("Human Wildlife Interaction"))
+
+# Cleaning the first nations heritage site in HWI data ----
+HWI$Protected.Heritage.Area[HWI$Protected.Heritage.Area == "Saoy\xfa-?ehdacho National Historic Site of Canada"]<- "Grizzly Bear Mountain and Scented Grass Hills"
+
+# Convert dates in HWI from characters to date ----
+HWI$Incident.Date <- ymd(HWI$Incident.Date)
+
+# Add a column "Incident Year" to HWI ----
+HWI$Incident.Year <- as.numeric(format(HWI$Incident.Date, "%Y"))
+
+# Add a colume "Incident Month" to HWI ----
+HWI$Incident.Month <- as.numeric(format(HWI$Incident.Date, "%m"))
+
+# Combine year and month into a single column
+HWI$year_month <- as.yearmon(paste(HWI$Incident.Year, HWI$Incident.Month), "%Y %m") 
+
+# Renaming columns in HWI 
+HWI_parks <- HWI %>% 
+  rename("park" = "Protected.Heritage.Area") %>% 
+  rename("species" = "Species.Common.Name") %>% 
+  rename("year" = "Incident.Year") %>% 
+  rename("month" = "Incident.Month") %>% 
+  rename("HWI" = "Incident.Type")
+
+# Shortening park names
+HWI_parks$park[HWI_parks$park == "Banff National Park of Canada"]<- "Banff"
+HWI_parks$park[HWI_parks$park == "Pacific Rim National Park Reserve of Canada"]<- "Pacific_Rim"
+HWI_parks$park[HWI_parks$park == "Waterton Lakes National Park of Canada"]<- "Waterton_Lakes"
+HWI_parks$park[HWI_parks$park == "Kejimkujik National Park and National Historic Site of Canada"]<- "Kejimkujik"
+HWI_parks$park[HWI_parks$park == "Jasper National Park of Canada"]<- "Jasper"
+HWI_parks$park[HWI_parks$park == "Forillon National Park of Canada"]<- "Forillon"
+HWI_parks$park[HWI_parks$park == "Prince Albert National Park of Canada"]<- "Prince_Albert"
+HWI_parks$park[HWI_parks$park == "Kootenay National Park of Canada"]<- "Kootenay"
+HWI_parks$park[HWI_parks$park == "Glacier National Park of Canada"]<- "Glacier"
+HWI_parks$park[HWI_parks$park == "Wapusk National Park of Canada"]<- "Wapusk"
+HWI_parks$park[HWI_parks$park == "Grasslands National Park of Canada"]<- "Grasslands"
+HWI_parks$park[HWI_parks$park == "Bruce Peninsula National Park of Canada"]<- "Bruce_Peninsula"
+HWI_parks$park[HWI_parks$park == "Yoho National Park of Canada"]<- "Yoho"
+HWI_parks$park[HWI_parks$park == "Terra Nova National Park of Canada"]<- "Terra_Nova"
+HWI_parks$park[HWI_parks$park == "Mount Revelstoke National Park of Canada"]<- "Mount_Revelstoke"
+HWI_parks$park[HWI_parks$park == "Elk Island National Park of Canada"]<- "Elk_Island"
+HWI_parks$park[HWI_parks$park == "Georgian Bay Islands National Park of Canada"]<- "Georgian_Bay_Islands"
+HWI_parks$park[HWI_parks$park == "Prince of Wales Fort National Historic Site of Canada"]<- "Prince_of_Wales_Fort"
+HWI_parks$park[HWI_parks$park == "Point Pelee National Park of Canada"]<- "Point_Pelee"
+HWI_parks$park[HWI_parks$park == "Thousand Islands National Park of Canada"]<- "Thousand_Islands"
+HWI_parks$park[HWI_parks$park == "Wood Buffalo National Park of Canada"]<- "Wood_Buffalo"
+HWI_parks$park[HWI_parks$park == "Prince Edward Island National Park of Canada"]<- "Prince_Edward_Island"
+HWI_parks$park[HWI_parks$park == "Ivvavik National Park of Canada"]<- "Ivvavik"
+HWI_parks$park[HWI_parks$park == "Kouchibouguac National Park of Canada"]<- "Kouchibouguac"
+HWI_parks$park[HWI_parks$park == "Grizzly Bear Mountain and Scented Grass Hills"]<- "Grizzly_Bear_Mountain"
+HWI_parks$park[HWI_parks$park == "Fundy National Park of Canada"]<- "Fundy"
+HWI_parks$park[HWI_parks$park == "Nahanni National Park Reserve of Canada"]<- "Nahanni"
+HWI_parks$park[HWI_parks$park == "Aulavik National Park of Canada"]<- "Aulavik"
+HWI_parks$park[HWI_parks$park == "Sable Island National Park Reserve"]<- "Sable_Island"
+HWI_parks$park[HWI_parks$park == "Fathom Five National Marine Park of Canada"]<- "Fathom_Five"
+HWI_parks$park[HWI_parks$park == "Fort Walsh National Historic Site of Canada"]<- "Fort_Walsh"
+
+# Cleaning the species by omitting unknowns
+HWI_parks <- HWI_parks[HWI_parks$species != "None",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown bear",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown bird",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown bat",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown ungulate",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown gull",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown canid",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown snake",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown fish",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown Duck",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown grouse",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown rodent",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown Myotis bat",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown raptor",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown owl",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown sea lion",]
+
+#Count number of incidents by park
+incident_count <- HWI_parks %>% 
+  count(HWI_parks$park)
+
+# import Canada shape and extract boundaries only
+canadashape <- st_as_sf(PROV) %>%  
+  st_geometry()
+
+# import coordinates of all national parks, coordinates obtained from Google Maps
+park_coordinates <- read.csv("data/park_coordinates.csv")
+
+# convert coordinates into spatial data
+park_location <- SpatialPoints(select(park_coordinates, longitude, latitude))
+
+# plot parks
+plot(canadashape)
+sp::plot(park_location, add = TRUE, col = 'coral', pch = 19, cex = 0.5) 
+# Ivvavik keeps appearing in Alaska???
+
+-------------------------------------------------
+  
+# importing the gdb file --> not working???
+sf::st_layers("data/ProtectedConservedArea.gdb")
+st_read("data/ProtectedConservedArea.gdb")
