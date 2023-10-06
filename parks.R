@@ -10,6 +10,7 @@ library(lubridate) #convert whole columns to dates
 library(zoo) #dates as year month
 library(canadianmaps) #import annotated map of Canada
 library(sf) # spatial data
+library(sp) #Spatial Points function
 
 # set working directory
 setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/data-exploration")
