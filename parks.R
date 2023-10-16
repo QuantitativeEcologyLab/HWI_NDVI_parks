@@ -11,9 +11,12 @@ library(zoo) #dates as year month
 library(canadianmaps) #import annotated map of Canada
 library(sf) # spatial data
 library(sp) #Spatial Points function
+library(rstudioapi) #for creating colour palette
+library(grDevices) #for creating colour palette
+library(fBasics) #for creating colour palette
 
 # set working directory
-setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/data-exploration")
+setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/HWI_parks")
 
 # importing data
 animals_involved <- read.csv("data/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
@@ -116,8 +119,183 @@ plot(canadashape)
 sp::plot(park_location, add = TRUE, col = 'coral', pch = 19, cex = 0.5) 
 # Ivvavik keeps appearing in Alaska???
 
--------------------------------------------------
-  
-# importing the gdb file --> not working???
-sf::st_layers("data/ProtectedConservedArea.gdb")
-st_read("data/ProtectedConservedArea.gdb")
+#Other visualisations ----
+
+#Create another data frame by grouping according to months and years
+HWI_grouped_date <- aggregate(HWI ~ year_month + park, data = HWI_parks, FUN = "length")
+HWI_grouped_date$year_month <- as.Date(HWI_grouped_date$year_month, format = "%Y-%m")
+HWI_grouped_date$year <- lubridate::year(HWI_grouped_date$year_month)
+HWI_grouped_date$month <- lubridate::month(HWI_grouped_date$year_month)
+
+# plot HWI across years and months
+ggplot() +
+  geom_point(data = HWI_grouped_date, aes(x = year_month, y = HWI, col = park)) +
+  xlab("Time") +
+  ylab("Human-wildlife interactions") +
+  # using heat palette for parks
+  scale_color_manual(values = heatPalette(n=31)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# group parks according to province
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Terra_Nova")] <- "NL"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_Edward_Island")] <- "PE"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Kejimkujik", "Sable_Island")] <- "NS"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Kouchibouguac", "Fundy")] <- "NB"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Forillon")] <- "QC"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Bruce_Peninsula", "Fathom_Five", "Georgian_Bay_Islands", "Point_Pelee", "Thousand_Islands")] <- "ON"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_of_Wales_Fort", "Wapusk")] <- "MB"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_Albert")] <- "SK"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Banff", "Elk_Island", "Grasslands","Jasper", "Waterton_Lakes", "Wood_Buffalo")] <- "AB"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Glacier", "Kootenay", "Mount_Revelstoke", "Pacific_Rim", "Yoho")] <- "BC"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Ivvavik")] <- "YT"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Aulavik", "Grizzly_Bear_Mountain", "Nahanni")] <- "NT"
+
+# plot parks according to province by month
+HWI_province <- HWI_grouped_date %>% 
+  rename("province" = "park")
+
+ggplot() +
+  geom_point(data = HWI_province, aes(x = year_month, y = HWI, col = province), alpha = 0.25) +
+  xlab("Time") +
+  ylab("Human-wildlife interactions") +
+  # using rainbow palette for parks
+  scale_color_manual(values = rainbowPalette(n=12)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# plot species sightings???
+HWI_grouped_species <- aggregate(HWI ~ year_month + park + species, data = HWI_parks, FUN = "length")
+
+ggplot() +
+  geom_point(data = HWI_grouped_species, aes(x = species, y = HWI, col = species), alpha = 0.8) +
+  xlab("Time") +
+  ylab("Human-wildlife interactions") +
+  # using rainbow palette for parks
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+#too much data
+
+#still too much data
+ggplot(data = HWI_grouped_species, aes(x = species, y = HWI)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("No. of Sightings") +
+  xlab("Species") +
+  theme(axis.text.x = element_text(angle = 90), axis.title.x = element_text(size=2, family = "sans", face = "bold"),)
+
+# count no. of sightings per species 
+sightings <- HWI_grouped_species %>% 
+  count(HWI_grouped_species$species)
+
+# filter the sightings >10 by creating a subset (top 14 species)
+filtered_sightings <- subset(HWI_grouped_species, HWI_grouped_species$HWI>10)
+
+# plot species with >10 sightings (top 14 species)
+ggplot(data = filtered_sightings, aes(x = species, y = HWI)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("No. of Sightings") +
+  xlab("Species") +
+  theme(axis.text.x = element_text(angle = 90), axis.title.x = element_text(size=2, family = "sans", face = "bold"),)
+
+# plot species with >10 sightings (top 8 species) with time
+ggplot() +
+  geom_point(data = filtered_sightings, aes(x = year_month, y = HWI, col = species), alpha = 0.8) +
+  xlab("Time") +
+  ylab("Frequency") +
+  # using rainbow palette for parks
+  scale_color_manual(values = rainbowPalette(n=14)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# plot HWI according to seasons 
+# creating a new dataset with seasons 
+HWI_with_season <- HWI_parks %>%
+  mutate(season = case_when(month %in% 3:5 ~ 'Spring',
+                            month %in% 6:8 ~ 'Summer',
+                            month %in% 9:11 ~ 'Autumn',
+                            TRUE ~ 'Winter'))
+
+#creating a new dataframe with seasons
+HWI_grouped_season <- aggregate(HWI ~ year_month + park + species + season, data = HWI_with_season, FUN = "length")
+
+HWI_grouped_season %>% 
+  count(HWI_grouped_season$season)
+sum(HWI_grouped_season$HWI)
+
+#plotting the number of HWI according to season
+ggplot(data = HWI_grouped_season, aes(x = season, y = HWI)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("HWI Frequency") +
+  xlab("Season") +
+  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"),)
+
+# filtering the species with >10 sightings
+filtered_season_sightings <- subset(HWI_grouped_season, HWI_grouped_season$HWI>10)
+
+# plotting the number of sightings of species >10 sightings according to season
+ggplot() +
+  geom_point(data = filtered_season_sightings, aes(x = season, y = HWI, col = species), alpha = 0.8) +
+  xlab("Season") +
+  ylab("No. of Sightings") +
+  # using rainbow palette for parks
+  scale_color_manual(values = rainbowPalette(n=14)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
