@@ -14,6 +14,7 @@ library(sp) #Spatial Points function
 library(rstudioapi) #for creating colour palette
 library(grDevices) #for creating colour palette
 library(fBasics) #for creating colour palette
+library(mgcv) #gam
 
 # set working directory
 setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/HWI_parks")
@@ -187,7 +188,7 @@ ggplot() +
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 # plot species sightings???
-HWI_grouped_species <- aggregate(HWI ~ year_month + park + species, data = HWI_parks, FUN = "length")
+HWI_grouped_species <- aggregate(HWI ~ year_month + park + species + month + year, data = HWI_parks, FUN = "length")
 
 ggplot() +
   geom_point(data = HWI_grouped_species, aes(x = species, y = HWI, col = species), alpha = 0.8) +
@@ -286,6 +287,150 @@ ggplot() +
   ylab("No. of Sightings") +
   # using rainbow palette for parks
   scale_color_manual(values = rainbowPalette(n=14)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# models for visualising the normal trend ----
+HWI_grouped_species <- HWI_grouped_species %>% 
+  mutate(park = factor(park))
+
+model1 <- gam(HWI ~
+              s(park, bs = "re") +
+              s(month, k = 8, bs = "cc"),
+              data = HWI_grouped_species, method = "REML")
+
+summary(model1)
+plot(model1, pages = 1)
+
+# residuals of model 1
+residuals(model1)
+
+# add the residuals as a new column into the HWI_grouped_species dataframe 
+HWI_grouped_species$residuals <- residuals(model1)
+
+hist(HWI_grouped_species$residuals)
+
+#look at the trend in Jasper 
+Jasper_trend <- HWI_grouped_species %>% 
+  filter(park %in% c("Jasper"))
+
+#plot the trend of residuals in Jasper by month 
+ggplot(data = Jasper_trend, aes(x = month, y = residuals)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("Residuals") +
+  xlab("Month") +
+  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+
+#plot the trend of residuals by year in Jasper
+ggplot() +
+  geom_point(data = Jasper_trend, aes(x = year_month, y = residuals)) +
+  xlab("Date") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+#look at the trend in Banff
+Banff_trend <- HWI_grouped_species %>% 
+  filter(park %in% c("Banff"))
+
+#plot the trend of residuals in Banff by month
+ggplot(data = Banff_trend, aes(x = month, y = residuals)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("Residuals") +
+  xlab("Month") +
+  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+
+#plot the trend of residuals by year in Banff
+ggplot() +
+  geom_point(data = Banff_trend, aes(x = year_month, y = residuals)) +
+  xlab("Date") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+#look at the trend in Pacific Rim
+Pacific_Rim_trend <- HWI_grouped_species %>% 
+  filter(park %in% c("Pacific_Rim"))
+
+#plot the trend of residuals in Pacific Rim by month (Vancouver Island)
+ggplot(data = Jasper_trend, aes(x = month, y = residuals)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("Residuals") +
+  xlab("Month") +
+  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+
+#plot the trend of residuals by year in Pacific Rim
+ggplot() +
+  geom_point(data = Pacific_Rim_trend, aes(x = year_month, y = residuals)) +
+  xlab("Date") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+#look at the trend in Waterton Lakes
+Waterton_Lakes_trend <- HWI_grouped_species %>% 
+  filter(park %in% c("Waterton_Lakes"))
+
+#plot the trend of residuals by month in Waterton Lakes
+ggplot(data = Waterton_Lakes_trend, aes(x = month, y = residuals)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("Residuals") +
+  xlab("Month") +
+  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+
+#plot the trend of residuals by year in Waterton Lakes
+ggplot() +
+  geom_point(data = Waterton_Lakes_trend, aes(x = year_month, y = residuals)) +
+  xlab("Date") +
+  ylab("Residuals") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
