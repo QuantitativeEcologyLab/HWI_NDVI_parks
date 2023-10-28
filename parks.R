@@ -128,7 +128,7 @@ HWI_grouped_date$year_month <- as.Date(HWI_grouped_date$year_month, format = "%Y
 HWI_grouped_date$year <- lubridate::year(HWI_grouped_date$year_month)
 HWI_grouped_date$month <- lubridate::month(HWI_grouped_date$year_month)
 
-# plot HWI across years and months
+# plot HWI across years and months ----
 ggplot() +
   geom_point(data = HWI_grouped_date, aes(x = year_month, y = HWI, col = park)) +
   xlab("Time") +
@@ -149,7 +149,7 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-# group parks according to province
+# group parks according to province ----
 HWI_grouped_date$park[HWI_grouped_date$park %in% c("Terra_Nova")] <- "NL"
 HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_Edward_Island")] <- "PE"
 HWI_grouped_date$park[HWI_grouped_date$park %in% c("Kejimkujik", "Sable_Island")] <- "NS"
@@ -163,7 +163,7 @@ HWI_grouped_date$park[HWI_grouped_date$park %in% c("Glacier", "Kootenay", "Mount
 HWI_grouped_date$park[HWI_grouped_date$park %in% c("Ivvavik")] <- "YT"
 HWI_grouped_date$park[HWI_grouped_date$park %in% c("Aulavik", "Grizzly_Bear_Mountain", "Nahanni")] <- "NT"
 
-# plot parks according to province by month
+# plot parks according to province by month ----
 HWI_province <- HWI_grouped_date %>% 
   rename("province" = "park")
 
@@ -187,7 +187,7 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-# plot species sightings???
+# plot species sightings??? ----
 HWI_grouped_species <- aggregate(HWI ~ year_month + park + species + month + year, data = HWI_parks, FUN = "length")
 
 ggplot() +
@@ -225,7 +225,7 @@ sightings <- HWI_grouped_species %>%
 # filter the sightings >10 by creating a subset (top 14 species)
 filtered_sightings <- subset(HWI_grouped_species, HWI_grouped_species$HWI>10)
 
-# plot species with >10 sightings (top 14 species)
+# plot species with >10 sightings (top 14 species) ----
 ggplot(data = filtered_sightings, aes(x = species, y = HWI)) +
   geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
   scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
@@ -233,7 +233,7 @@ ggplot(data = filtered_sightings, aes(x = species, y = HWI)) +
   xlab("Species") +
   theme(axis.text.x = element_text(angle = 90), axis.title.x = element_text(size=2, family = "sans", face = "bold"),)
 
-# plot species with >10 sightings (top 8 species) with time
+# plot species with >10 sightings (top 8 species) with time ----
 ggplot() +
   geom_point(data = filtered_sightings, aes(x = year_month, y = HWI, col = species), alpha = 0.8) +
   xlab("Time") +
@@ -254,7 +254,7 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-# plot HWI according to seasons 
+# plot HWI according to seasons ----
 # creating a new dataset with seasons 
 HWI_with_season <- HWI_parks %>%
   mutate(season = case_when(month %in% 3:5 ~ 'Spring',
@@ -277,10 +277,10 @@ ggplot(data = HWI_grouped_season, aes(x = season, y = HWI)) +
   xlab("Season") +
   theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"),)
 
-# filtering the species with >10 sightings
+# filtering the species with >10 sightings ----
 filtered_season_sightings <- subset(HWI_grouped_season, HWI_grouped_season$HWI>10)
 
-# plotting the number of sightings of species >10 sightings according to season
+# plotting the number of sightings of species >10 sightings according to season ----
 ggplot() +
   geom_point(data = filtered_season_sightings, aes(x = season, y = HWI, col = species), alpha = 0.8) +
   xlab("Season") +
@@ -316,22 +316,15 @@ plot(model1, pages = 1)
 # residuals of model 1
 residuals(model1)
 
-# add the residuals as a new column into the HWI_grouped_species dataframe 
+# add the residuals as a new column into the HWI_grouped_species dataframe ----
 HWI_grouped_species$residuals <- residuals(model1)
 
+# looking at the distribution of the residuals 
 hist(HWI_grouped_species$residuals)
 
-#look at the trend in Jasper 
+#look at the trend in Jasper ----
 Jasper_trend <- HWI_grouped_species %>% 
   filter(park %in% c("Jasper"))
-
-#plot the trend of residuals in Jasper by month 
-ggplot(data = Jasper_trend, aes(x = month, y = residuals)) +
-  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
-  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
-  ylab("Residuals") +
-  xlab("Month") +
-  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
 
 #plot the trend of residuals by year in Jasper
 ggplot() +
@@ -352,17 +345,496 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-#look at the trend in Banff
+# Look at the trend of residuals by month in Jasper ----
+Jasper_jan_trend <- Jasper_trend %>% 
+  filter(month %in% c("1"))
+Jasper_feb_trend <- Jasper_trend %>% 
+  filter(month %in% c("2"))
+Jasper_mar_trend <- Jasper_trend %>% 
+  filter(month %in% c("3"))
+Jasper_apr_trend <- Jasper_trend %>% 
+  filter(month %in% c("4"))
+Jasper_may_trend <- Jasper_trend %>% 
+  filter(month %in% c("5"))
+Jasper_jun_trend <- Jasper_trend %>% 
+  filter(month %in% c("6"))
+Jasper_jul_trend <- Jasper_trend %>% 
+  filter(month %in% c("7"))
+Jasper_aug_trend <- Jasper_trend %>% 
+  filter(month %in% c("8"))
+Jasper_sep_trend <- Jasper_trend %>% 
+  filter(month %in% c("9"))
+Jasper_oct_trend <- Jasper_trend %>% 
+  filter(month %in% c("10"))
+Jasper_nov_trend <- Jasper_trend %>% 
+  filter(month %in% c("11"))
+Jasper_dec_trend <- Jasper_trend %>% 
+  filter(month %in% c("12"))
+
+# plot the monthly residual trend data in Jasper by year ----
+ggplot() +
+  geom_point(data = Jasper_jan_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_feb_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_mar_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_apr_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_may_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_jun_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_jul_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_aug_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_sep_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_oct_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_nov_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_dec_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+#look at the trend in Banff ----
 Banff_trend <- HWI_grouped_species %>% 
   filter(park %in% c("Banff"))
 
-#plot the trend of residuals in Banff by month
-ggplot(data = Banff_trend, aes(x = month, y = residuals)) +
-  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
-  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+# Look at the trend of residuals by month in Banff ----
+Banff_jan_trend <- Banff_trend %>% 
+  filter(month %in% c("1"))
+Banff_feb_trend <- Banff_trend %>% 
+  filter(month %in% c("2"))
+Banff_mar_trend <- Banff_trend %>% 
+  filter(month %in% c("3"))
+Banff_apr_trend <- Banff_trend %>% 
+  filter(month %in% c("4"))
+Banff_may_trend <- Banff_trend %>% 
+  filter(month %in% c("5"))
+Banff_jun_trend <- Banff_trend %>% 
+  filter(month %in% c("6"))
+Banff_jul_trend <- Banff_trend %>% 
+  filter(month %in% c("7"))
+Banff_aug_trend <- Banff_trend %>% 
+  filter(month %in% c("8"))
+Banff_sep_trend <- Banff_trend %>% 
+  filter(month %in% c("9"))
+Banff_oct_trend <- Banff_trend %>% 
+  filter(month %in% c("10"))
+Banff_nov_trend <- Banff_trend %>% 
+  filter(month %in% c("11"))
+Banff_dec_trend <- Banff_trend %>% 
+  filter(month %in% c("12"))
+
+# plot the monthly residual trend data in Banff by year
+ggplot() +
+  geom_point(data = Banff_jan_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
   ylab("Residuals") +
-  xlab("Month") +
-  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_feb_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_mar_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_apr_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_may_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_jun_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_jul_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_aug_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_sep_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_oct_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_nov_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Banff_dec_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
 
 #plot the trend of residuals by year in Banff
 ggplot() +
@@ -387,15 +859,250 @@ ggplot() +
 Pacific_Rim_trend <- HWI_grouped_species %>% 
   filter(park %in% c("Pacific_Rim"))
 
-#plot the trend of residuals in Pacific Rim by month (Vancouver Island)
-ggplot(data = Jasper_trend, aes(x = month, y = residuals)) +
-  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
-  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
-  ylab("Residuals") +
-  xlab("Month") +
-  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+# Look at the trend of residuals by month in Pacific Rim ----
+Pacific_Rim_jan_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("1"))
+Pacific_Rim_feb_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("2"))
+Pacific_Rim_mar_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("3"))
+Pacific_Rim_apr_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("4"))
+Pacific_Rim_may_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("5"))
+Pacific_Rim_jun_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("6"))
+Pacific_Rim_jul_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("7"))
+Pacific_Rim_aug_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("8"))
+Pacific_Rim_sep_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("9"))
+Pacific_Rim_oct_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("10"))
+Pacific_Rim_nov_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("11"))
+Pacific_Rim_dec_trend <- Pacific_Rim_trend %>% 
+  filter(month %in% c("12"))
 
-#plot the trend of residuals by year in Pacific Rim
+# plot the monthly residual trend data in Pacific Rim by year ----
+ggplot() +
+  geom_point(data = Pacific_Rim_jan_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_feb_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_mar_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_apr_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_may_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_jun_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_jul_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_aug_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_sep_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_oct_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_nov_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Pacific_Rim_dec_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+#plot the trend of residuals by year in Pacific Rim (Vanouver Island)
 ggplot() +
   geom_point(data = Pacific_Rim_trend, aes(x = year_month, y = residuals)) +
   xlab("Date") +
@@ -418,13 +1125,248 @@ ggplot() +
 Waterton_Lakes_trend <- HWI_grouped_species %>% 
   filter(park %in% c("Waterton_Lakes"))
 
-#plot the trend of residuals by month in Waterton Lakes
-ggplot(data = Waterton_Lakes_trend, aes(x = month, y = residuals)) +
-  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
-  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+# Look at the trend of residuals by month in Waterton Lakes ----
+Waterton_Lakes_jan_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("1"))
+Waterton_Lakes_feb_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("2"))
+Waterton_Lakes_mar_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("3"))
+Waterton_Lakes_apr_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("4"))
+Waterton_Lakes_may_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("5"))
+Waterton_Lakes_jun_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("6"))
+Waterton_Lakes_jul_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("7"))
+Waterton_Lakes_aug_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("8"))
+Waterton_Lakes_sep_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("9"))
+Waterton_Lakes_oct_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("10"))
+Waterton_Lakes_nov_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("11"))
+Waterton_Lakes_dec_trend <- Waterton_Lakes_trend %>% 
+  filter(month %in% c("12"))
+
+# plot the monthly residual trend data in Waterton Lakes by year ----
+ggplot() +
+  geom_point(data = Waterton_Lakes_jan_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
   ylab("Residuals") +
-  xlab("Month") +
-  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"))
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_feb_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_mar_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_apr_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_may_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_jun_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_jul_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_aug_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_sep_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_oct_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_nov_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Waterton_Lakes_dec_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 #plot the trend of residuals by year in Waterton Lakes
 ggplot() +
@@ -444,3 +1386,5 @@ ggplot() +
         panel.background = element_rect(fill = "transparent"),
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+
