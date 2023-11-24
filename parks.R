@@ -15,6 +15,7 @@ library(rstudioapi) #for creating colour palette
 library(grDevices) #for creating colour palette
 library(fBasics) #for creating colour palette
 library(mgcv) #gam
+library(terra) #shape file 
 
 # set working directory
 setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/HWI_parks")
@@ -100,6 +101,7 @@ HWI_parks <- HWI_parks[HWI_parks$species != "Unknown Myotis bat",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown raptor",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown owl",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown sea lion",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown deer",]
 
 #Count number of incidents by park
 incident_count <- HWI_parks %>% 
@@ -305,9 +307,16 @@ ggplot() +
 HWI_grouped_species <- HWI_grouped_species %>% 
   mutate(park = factor(park))
 
+HWI_grouped_species$species <- as.factor(HWI_grouped_species$species)
+
+
 model1 <- gam(HWI ~
-              s(park, bs = "re") +
-              s(month, k = 8, bs = "cc"),
+              s(park, bs = "fs") +
+                s(species, bs = "fs") +
+              #Add a random effect for species
+              ti(year, park, k = 12, bs = "fs") +
+              ti(month, park, k = 8, bs = "fs"), #Adjust for a random effect of park, done
+              family = "poisson",
               data = HWI_grouped_species, method = "REML")
 
 summary(model1)
@@ -326,9 +335,10 @@ hist(HWI_grouped_species$residuals)
 Jasper_trend <- HWI_grouped_species %>% 
   filter(park %in% c("Jasper"))
 
-#plot the trend of residuals by year in Jasper
+#plot the trend of residuals by year in Jasper ----
 ggplot() +
-  geom_point(data = Jasper_trend, aes(x = year_month, y = residuals)) +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = Jasper_trend, aes(x = year_month, y = residuals, col = species)) +
   xlab("Date") +
   ylab("Residuals") +
   theme_bw() +
@@ -338,7 +348,7 @@ ggplot() +
         axis.title.x = element_text(size=12, family = "sans", face = "bold"),
         axis.text.y = element_text(size=10, family = "sans"),
         axis.text.x  = element_text(size=10, family = "sans"),
-        legend.position = "right",
+        legend.position = "none",
         legend.title = element_text(face = "bold"),
         legend.background = element_blank(),
         panel.background = element_rect(fill = "transparent"),
@@ -618,7 +628,7 @@ Banff_nov_trend <- Banff_trend %>%
 Banff_dec_trend <- Banff_trend %>% 
   filter(month %in% c("12"))
 
-# plot the monthly residual trend data in Banff by year
+# plot the monthly residual trend data in Banff by year ----
 ggplot() +
   geom_point(data = Banff_jan_trend, aes(x = year, y = residuals)) +
   xlab("Year") +
@@ -836,9 +846,9 @@ ggplot() +
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 
-#plot the trend of residuals by year in Banff
+#plot the trend of residuals by year in Banff ----
 ggplot() +
-  geom_point(data = Banff_trend, aes(x = year_month, y = residuals)) +
+  geom_point(data = Banff_trend, aes(x = year_month, y = residuals, col = species)) +
   xlab("Date") +
   ylab("Residuals") +
   theme_bw() +
@@ -848,7 +858,7 @@ ggplot() +
         axis.title.x = element_text(size=12, family = "sans", face = "bold"),
         axis.text.y = element_text(size=10, family = "sans"),
         axis.text.x  = element_text(size=10, family = "sans"),
-        legend.position = "right",
+        legend.position = "none",
         legend.title = element_text(face = "bold"),
         legend.background = element_blank(),
         panel.background = element_rect(fill = "transparent"),
@@ -1102,9 +1112,9 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-#plot the trend of residuals by year in Pacific Rim (Vanouver Island)
+#plot the trend of residuals by year in Pacific Rim (Vanouver Island) ----
 ggplot() +
-  geom_point(data = Pacific_Rim_trend, aes(x = year_month, y = residuals)) +
+  geom_point(data = Pacific_Rim_trend, aes(x = year_month, y = residuals, col = species)) +
   xlab("Date") +
   ylab("Residuals") +
   theme_bw() +
@@ -1114,7 +1124,7 @@ ggplot() +
         axis.title.x = element_text(size=12, family = "sans", face = "bold"),
         axis.text.y = element_text(size=10, family = "sans"),
         axis.text.x  = element_text(size=10, family = "sans"),
-        legend.position = "right",
+        legend.position = "none",
         legend.title = element_text(face = "bold"),
         legend.background = element_blank(),
         panel.background = element_rect(fill = "transparent"),
@@ -1368,9 +1378,9 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-#plot the trend of residuals by year in Waterton Lakes
+#plot the trend of residuals by year in Waterton Lakes ----
 ggplot() +
-  geom_point(data = Waterton_Lakes_trend, aes(x = year_month, y = residuals)) +
+  geom_point(data = Waterton_Lakes_trend, aes(x = year_month, y = residuals, col = species)) +
   xlab("Date") +
   ylab("Residuals") +
   theme_bw() +
@@ -1380,11 +1390,75 @@ ggplot() +
         axis.title.x = element_text(size=12, family = "sans", face = "bold"),
         axis.text.y = element_text(size=10, family = "sans"),
         axis.text.x  = element_text(size=10, family = "sans"),
-        legend.position = "right",
+        legend.position = "none",
         legend.title = element_text(face = "bold"),
         legend.background = element_blank(),
         panel.background = element_rect(fill = "transparent"),
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
+# importing shape files of Canadian national parks ----
+CApolygon <- vect("data/CLAB_CA_2023-09-08/CLAB_CA_2023-09-08.shp")
+plot(CApolygon)
+# my HWI data only has 31 parks (e.g. no NU but they are in this shape file)
 
+ABpolygon <- vect("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
+plot(ABpolygon)
+
+BCpolygon <- vect("data/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
+plot(BCpolygon)
+
+MBpolygon <- vect("data/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
+plot(MBpolygon)
+
+NBpolygon <- vect("data/CLAB_NB_2023-09-08/CLAB_NB_2023-09-08.shp")
+plot(NBpolygon)
+
+NLpolygon <- vect("data/CLAB_NL_2023-09-08/CLAB_NL_2023-09-08.shp")
+plot(NLpolygon)
+
+NSpolygon <- vect("data/CLAB_NS_2023-09-08/CLAB_NS_2023-09-08.shp")
+plot(NSpolygon)
+
+NTpolygon <- vect("data/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
+plot(NTpolygon)
+
+NUpolygon <- vect("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
+plot(NUpolygon)
+
+ONpolygon <- vect("data/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
+plot(ONpolygon)
+
+PEpolygon <- vect("data/CLAB_PE_2023-09-08/CLAB_PE_2023-09-08.shp")
+plot(PEpolygon)
+
+QCpolygon <- vect("data/CLAB_QC_2023-09-08/CLAB_QC_2023-09-08.shp")
+plot(QCpolygon)
+
+SKpolygon <- vect("data/CLAB_SK_2023-09-08/CLAB_SK_2023-09-08.shp")
+plot(SKpolygon)
+
+YTpolygon <- vect("data/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
+plot(YTpolygon)
+
+# Group species by higher taxonomic groups ----
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Grizzly Bear", "Black Bear", "Polar Bear" )] <- "Bear"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Domestic Cattle", "Domestic Cat", "Domestic Dog", "Domestic Horse", "Domestic Sheep")] <- "Domestic animal"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Mule Deer", "White-tailed Deer", "Black-tailed deer" )] <- "Deer"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Red Squirrel", "Beaver", "Columbian Ground Squirrel", "Hoary Marmot", "Woodchuck", "Woodrat", "Muskrat", "Richardson's Ground Squirrel", "Red-tailed Chipmunk", "Porcupine", "Golden-mantled Ground Squirrel", "Brown Rat", "Least Chipmunk", "Eastern Chipmunk", "Northern Flying Squirrel", "Black-tailed prairie dog", "Yellow-bellied Marmot")] <- "Rodent"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Massasauga", "Prairie Rattlesnake", "Smooth Greensnake", "Bullsnake", "Water Snake", "Plains Gartersnake", "Common Gartersnake", "Yellow-bellied Racer" )] <- "Snake"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Silver-haired Bat", "Big Brown Bat", "Little Brown Myotis" )] <- "Bat"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Tiger Salamander", "Long-toed Salamander" )] <- "Salamander"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Harbour seal", "California Sea Lion", "Northern Elephant Seal", "Steller Sea Lion" )] <- "Pinneped"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Marten", "Wolverine", "Badger", "River Otter", "Ermine", "Least Weasel" )] <- "Weasel"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Greater White-fronted Goose", "Canada Goose", "Trumpeter swan", "Ring-billed Gull", "Double-crested Cormorant", "Mallard", "Common Loon", "American Coot", "Common Merganser", "Red-necked Grebe", "Western Grebe")] <- "Waterfowl"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("American Tree Sparrow", "House Sparrow", "Barn Swallow", "Field Sparrow", "American Robin", "Golden-crowned Kinglet", "Common Redpoll", "Dark-eyed Junco" )] <- "Songbird"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Great Horned Owl", "Great Grey Owl", "Barred Owl", "Northern Pygmy-Owl", "Northern Saw-whet Owl", "Burrowing Owl" )] <- "Owl"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Semipalmated Plover", "Great Blue Heron", "Killdeer" )] <- "Shorebird"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Downy Woodpecker", "Pileated Woodpecker", "Hairy Woodpecker", "Lewis's Woodpecker" )] <- "Woodpecker"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Bald Eagle", "Osprey", "Golden Eagle", "Sharp-shinned Hawk", "Sharp-shinned Hawk" )] <- "Accipitridae"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Blue Grouse", "Ruffed Grouse", "Spruce Grouse", "Greater Sage-grouse", "Wild Turkey" )] <- "Phasianidae"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Rufous Hummingbird", "Ruby-throated Hummingbird" )] <- "Hummingbird"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Plains Bison", "Wood Bison" )] <- "Bison"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Raven", "Crow",  "Gray Jay",  "Steller's Jay", "Magpie" )] <- "Corvid"
+HWI_grouped_species$species[HWI_grouped_species$species %in% c("Wasp", "Ant", "Earwigs" )] <- "Insect"
