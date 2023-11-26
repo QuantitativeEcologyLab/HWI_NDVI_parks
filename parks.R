@@ -1397,49 +1397,7 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-# importing shape files of Canadian national parks ----
-CApolygon <- vect("data/CLAB_CA_2023-09-08/CLAB_CA_2023-09-08.shp")
-plot(CApolygon)
-# my HWI data only has 31 parks (e.g. no NU but they are in this shape file)
 
-ABpolygon <- vect("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
-plot(ABpolygon)
-
-BCpolygon <- vect("data/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
-plot(BCpolygon)
-
-MBpolygon <- vect("data/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
-plot(MBpolygon)
-
-NBpolygon <- vect("data/CLAB_NB_2023-09-08/CLAB_NB_2023-09-08.shp")
-plot(NBpolygon)
-
-NLpolygon <- vect("data/CLAB_NL_2023-09-08/CLAB_NL_2023-09-08.shp")
-plot(NLpolygon)
-
-NSpolygon <- vect("data/CLAB_NS_2023-09-08/CLAB_NS_2023-09-08.shp")
-plot(NSpolygon)
-
-NTpolygon <- vect("data/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
-plot(NTpolygon)
-
-NUpolygon <- vect("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
-plot(NUpolygon)
-
-ONpolygon <- vect("data/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
-plot(ONpolygon)
-
-PEpolygon <- vect("data/CLAB_PE_2023-09-08/CLAB_PE_2023-09-08.shp")
-plot(PEpolygon)
-
-QCpolygon <- vect("data/CLAB_QC_2023-09-08/CLAB_QC_2023-09-08.shp")
-plot(QCpolygon)
-
-SKpolygon <- vect("data/CLAB_SK_2023-09-08/CLAB_SK_2023-09-08.shp")
-plot(SKpolygon)
-
-YTpolygon <- vect("data/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
-plot(YTpolygon)
 
 # Group species by higher taxonomic groups ----
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Grizzly Bear", "Black Bear", "Polar Bear" )] <- "Bear"
@@ -1462,3 +1420,143 @@ HWI_grouped_species$species[HWI_grouped_species$species %in% c("Rufous Hummingbi
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Plains Bison", "Wood Bison" )] <- "Bison"
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Raven", "Crow",  "Gray Jay",  "Steller's Jay", "Magpie" )] <- "Corvid"
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Wasp", "Ant", "Earwigs" )] <- "Insect"
+
+# importing shape files of Canadian national parks (visualisation only)----
+CAshape <- vect("data/CLAB_CA_2023-09-08/CLAB_CA_2023-09-08.shp")
+plot(CAshape)
+# my HWI data only has 31 parks (e.g. no NU but they are in this shape file)
+
+ABshape <- vect("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
+plot(ABshape)
+
+BCshape <- vect("data/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
+plot(BCshape)
+
+MBshape <- vect("data/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
+plot(MBshape)
+
+NBshape <- vect("data/CLAB_NB_2023-09-08/CLAB_NB_2023-09-08.shp")
+plot(NBshape)
+
+NLshape <- vect("data/CLAB_NL_2023-09-08/CLAB_NL_2023-09-08.shp")
+plot(NLshape)
+
+NSshape <- vect("data/CLAB_NS_2023-09-08/CLAB_NS_2023-09-08.shp")
+plot(NSshape)
+
+NTshape <- vect("data/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
+plot(NTshape)
+
+NUpolygon <- vect("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
+plot(NUshape)
+
+ONshape <- vect("data/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
+plot(ONshape)
+
+PEshape <- vect("data/CLAB_PE_2023-09-08/CLAB_PE_2023-09-08.shp")
+plot(PEshape)
+
+QCshape <- vect("data/CLAB_QC_2023-09-08/CLAB_QC_2023-09-08.shp")
+plot(QCshape)
+
+SKshape <- vect("data/CLAB_SK_2023-09-08/CLAB_SK_2023-09-08.shp")
+plot(SKshape)
+
+YTshape <- vect("data/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
+plot(YTshape)
+
+# importing polygons with sf ----
+
+ABpolygon <- st_read("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
+plot(ABpolygon)
+
+BCpolygon <- st_read("data/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
+
+MBpolygon <- st_read("data/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
+plot(MBpolygon)
+
+NBpolygon <- st_read("data/CLAB_NB_2023-09-08/CLAB_NB_2023-09-08.shp")
+plot(NBpolygon)
+
+NLpolygon <- st_read("data/CLAB_NL_2023-09-08/CLAB_NL_2023-09-08.shp")
+plot(NLpolygon)
+
+NSpolygon <- st_read("data/CLAB_NS_2023-09-08/CLAB_NS_2023-09-08.shp")
+plot(NSpolygon)
+
+NTpolygon <- st_read("data/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
+plot(NTpolygon)
+
+NUpolygon <- st_read("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
+plot(NUpolygon)
+
+ONpolygon <- st_read("data/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
+plot(ONpolygon)
+
+PEpolygon <- st_read("data/CLAB_PE_2023-09-08/CLAB_PE_2023-09-08.shp")
+plot(PEpolygon)
+
+QCpolygon <- st_read("data/CLAB_QC_2023-09-08/CLAB_QC_2023-09-08.shp")
+plot(QCpolygon)
+
+SKpolygon <- st_read("data/CLAB_SK_2023-09-08/CLAB_SK_2023-09-08.shp")
+plot(SKpolygon)
+
+YTpolygon <- st_read("data/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
+plot(YTpolygon)
+
+# fitering for my 31 parks out of all the parks in each polygon ----
+#select for the firve parks in BC
+filtered_ABpolygon <- ABpolygon %>% 
+  filter(CLAB_ID %in% c("WATE", "ELKI", "JASP", "WOOD", "BANF")) # no polygon for grasslands
+plot(filtered_ABpolygon) 
+
+filtered_BCpolygon <- BCpolygon %>% 
+  filter(CLAB_ID %in% c("YOHO","KOOT","REVE","PRIM","GLAC"))
+plot(filtered_BCpolygon) #does it plot like this? 
+
+filtered_MBpolygon <- MBpolygon %>% 
+  filter(CLAB_ID %in% c("WAPU")) # no polygon for prince of wales fort
+plot(filtered_MBpolygon) 
+
+filtered_NBpolygon <- NBpolygon %>% 
+  filter(CLAB_ID %in% c("FUND", "KOUC")) 
+plot(filtered_NBpolygon) 
+
+filtered_NLpolygon <- NLpolygon %>% 
+  filter(CLAB_ID %in% c("NOVA"))
+plot(filtered_NLpolygon) 
+
+filtered_NSpolygon <- NSpolygon %>% 
+  filter(CLAB_ID %in% c("KEJI")) # no polygon for sable
+plot(filtered_NSpolygon) 
+
+filtered_NTpolygon <- NTpolygon %>% 
+  filter(CLAB_ID %in% c("AULA", "NAHA")) # no polygon for grizzly bear
+plot(filtered_NTpolygon) 
+
+# no NU parks in my data
+
+filtered_ONpolygon <- ONpolygon %>% 
+  filter(CLAB_ID %in% c("FIVE", "PELE", "GBIS", "THIS")) # no polygon for bruce peninsula
+plot(filtered_ONpolygon) 
+
+filtered_PEpolygon <- PEpolygon %>% 
+  filter(CLAB_ID %in% c("PEIS"))
+plot(filtered_PEpolygon) 
+
+filtered_QCpolygon <- QCpolygon %>% 
+  filter(CLAB_ID %in% c("FORI"))
+plot(filtered_QCpolygon) 
+
+filtered_SKpolygon <- SKpolygon %>% 
+  filter(CLAB_ID %in% c("PALB"))
+plot(filtered_SKpolygon) 
+
+filtered_YTpolygon <- YTpolygon %>% 
+  filter(CLAB_ID %in% c("IVVA"))
+plot(filtered_YTpolygon) 
+
+# need polygons for 5 more parks 
+
+
