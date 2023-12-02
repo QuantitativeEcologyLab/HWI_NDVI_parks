@@ -18,7 +18,7 @@ library(mgcv) #gam
 library(terra) #shape file 
 
 # set working directory
-setwd("C:/Users/gracelou/OneDrive - UBC/Documents/GitHub/HWI_parks")
+setwd("C:/Users/justi/Documents/GitHub/HWI_parks")
 
 # importing data
 animals_involved <- read.csv("data/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
@@ -1399,7 +1399,7 @@ ggplot() +
 
 
 
-# Group species by higher taxonomic groups ----
+# Group species by higher taxonomic groups ---- #why aren't they working now???
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Grizzly Bear", "Black Bear", "Polar Bear" )] <- "Bear"
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Domestic Cattle", "Domestic Cat", "Domestic Dog", "Domestic Horse", "Domestic Sheep")] <- "Domestic animal"
 HWI_grouped_species$species[HWI_grouped_species$species %in% c("Mule Deer", "White-tailed Deer", "Black-tailed deer" )] <- "Deer"
@@ -1447,7 +1447,7 @@ plot(NSshape)
 NTshape <- vect("data/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
 plot(NTshape)
 
-NUpolygon <- vect("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
+NUshape <- vect("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
 plot(NUshape)
 
 ONshape <- vect("data/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
@@ -1506,57 +1506,163 @@ YTpolygon <- st_read("data/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
 plot(YTpolygon)
 
 # fitering for my 31 parks out of all the parks in each polygon ----
-#select for the firve parks in BC
-filtered_ABpolygon <- ABpolygon %>% 
-  filter(CLAB_ID %in% c("WATE", "ELKI", "JASP", "WOOD", "BANF")) # no polygon for grasslands
-plot(filtered_ABpolygon) 
 
-filtered_BCpolygon <- BCpolygon %>% 
-  filter(CLAB_ID %in% c("YOHO","KOOT","REVE","PRIM","GLAC"))
-plot(filtered_BCpolygon) #does it plot like this? 
+#AB
 
-filtered_MBpolygon <- MBpolygon %>% 
-  filter(CLAB_ID %in% c("WAPU")) # no polygon for prince of wales fort
-plot(filtered_MBpolygon) 
+waterton_lakes <- ABpolygon[ABpolygon$CLAB_ID == "WATE", ]
+plot(waterton_lakes)
 
-filtered_NBpolygon <- NBpolygon %>% 
-  filter(CLAB_ID %in% c("FUND", "KOUC")) 
-plot(filtered_NBpolygon) 
+elk_island <- ABpolygon[ABpolygon$CLAB_ID == "ELKI", ]
+plot(elk_island)
 
-filtered_NLpolygon <- NLpolygon %>% 
-  filter(CLAB_ID %in% c("NOVA"))
-plot(filtered_NLpolygon) 
+jasper <- ABpolygon[ABpolygon$CLAB_ID == "JASP", ]
+plot(jasper)
 
-filtered_NSpolygon <- NSpolygon %>% 
-  filter(CLAB_ID %in% c("KEJI")) # no polygon for sable
-plot(filtered_NSpolygon) 
+wood_buffalo <- ABpolygon[ABpolygon$CLAB_ID == "WOOD", ]
+plot(wood_buffalo)
 
-filtered_NTpolygon <- NTpolygon %>% 
-  filter(CLAB_ID %in% c("AULA", "NAHA")) # no polygon for grizzly bear
-plot(filtered_NTpolygon) 
+banff <- ABpolygon[ABpolygon$CLAB_ID == "BANF", ]
+plot(banff)
+
+# no polygon for grasslands
+
+# BC
+
+yoho <- BCpolygon[BCpolygon$CLAB_ID == "YOHO", ]
+plot(yoho)
+
+kootenay <- BCpolygon[BCpolygon$CLAB_ID == "KOOT", ]
+plot(kootenay)
+
+mount_revelstoke <- BCpolygon[BCpolygon$CLAB_ID == "REVE", ]
+plot(mount_revelstoke)
+
+pacific_rim <- BCpolygon[BCpolygon$CLAB_ID == "PRIM", ]
+plot(pacific_rim)
+
+glacier <- BCpolygon[BCpolygon$CLAB_ID == "GLAC", ]
+plot(glacier)
+
+# MB
+
+wapusk <- MBpolygon[MBpolygon$CLAB_ID == "WAPU", ]
+plot(wapusk)
+
+# no polygon for prince of wales fort
+
+# NB
+
+fundy <- NBpolygon[NBpolygon$CLAB_ID == "FUND", ]
+plot(fundy)
+
+kouchibouguac <- NBpolygon[NBpolygon$CLAB_ID == "KOUC", ]
+plot(kouchibouguac)
+
+# NL
+
+terra_nova <- NLpolygon[NLpolygon$CLAB_ID == "NOVA", ]
+plot(terra_nova)
+
+# NS
+
+kejimkujik <- NSpolygon[NSpolygon$CLAB_ID == "KEJI", ]
+plot(kejimkujik)
+
+# no polygon on sable island
+
+# NT
+
+aulavik <- NTpolygon[NTpolygon$CLAB_ID == "AULA", ]
+plot(aulavik)
+
+nahanni <- NTpolygon[NTpolygon$CLAB_ID == "NAHA", ]
+plot(nahanni)
+
+# no polygon for grizzly bear
 
 # no NU parks in my data
 
-filtered_ONpolygon <- ONpolygon %>% 
-  filter(CLAB_ID %in% c("FIVE", "PELE", "GBIS", "THIS")) # no polygon for bruce peninsula
-plot(filtered_ONpolygon) 
+fathom_five <- ONpolygon[ONpolygon$CLAB_ID == "FIVE", ]
+plot(fathom_five)
 
-filtered_PEpolygon <- PEpolygon %>% 
-  filter(CLAB_ID %in% c("PEIS"))
-plot(filtered_PEpolygon) 
+point_pelee <- ONpolygon[ONpolygon$CLAB_ID == "PELE", ]
+plot(point_pelee)
 
-filtered_QCpolygon <- QCpolygon %>% 
-  filter(CLAB_ID %in% c("FORI"))
-plot(filtered_QCpolygon) 
+georgian_bay_islands <- ONpolygon[ONpolygon$CLAB_ID == "GBIS", ]
+plot(georgian_bay_islands)
 
-filtered_SKpolygon <- SKpolygon %>% 
-  filter(CLAB_ID %in% c("PALB"))
-plot(filtered_SKpolygon) 
+thousand_islands <- ONpolygon[ONpolygon$CLAB_ID == "THIS", ]
+plot(thousand_islands)
 
-filtered_YTpolygon <- YTpolygon %>% 
-  filter(CLAB_ID %in% c("IVVA"))
-plot(filtered_YTpolygon) 
+# no polygon for bruce peninsula
+
+# PE
+
+prince_edward_island <- PEpolygon[PEpolygon$CLAB_ID == "PEIS", ]
+plot(prince_edward_island)
+
+# QC
+
+forillon <- QCpolygon[QCpolygon$CLAB_ID == "FORI", ]
+plot(forillon)
+
+# SK
+
+prince_albert <- SKpolygon[SKpolygon$CLAB_ID == "PALB", ]
+plot(prince_albert)
+
+# YT
+
+ivvavik <- YTpolygon[YTpolygon$CLAB_ID == "IVVA", ]
+plot(ivvavik)
 
 # need polygons for 5 more parks 
+
+# start looking at ndvi ----
+
+library("xml2")
+library("rvest")
+library("dplyr")
+library("terra")
+
+
+
+#extract all links for each year
+url_path <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/"
+pg <- read_html(url_path)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url_path, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+#extract links for each file in each year
+for(i in 6:length(LINKS)){
+  url <- LINKS[i]
+  pag <- read_html(url)
+  ndvi_links <- paste(LINKS[i], html_attr(html_nodes(pag, "a"), "href"),  sep = "")
+  filenames <- html_attr(html_nodes(pag, "a"), "href")
+  
+for(j in 6:length(ndvi_links)){
+    url_path <- ndvi_links[j]
+    path <- paste("C:/Users/justi/Documents/GitHub/HWI_parks",filenames[j], sep="")
+    try(download.file(url_path, destfile = path))
+    
+    Sys.sleep(5)
+  }
+  
+  Sys.sleep(5)
+}
+
+#test the files to see if they work
+file1 <- "AVHRR-Land_v005_AVH13C1_NOAA-07_19810624_c20170610041337.nc_Annotated.rds"
+file2 <- "C:/Users/justi/Documents/GitHub/HWI_parksNA"
+NDVI <- terra::rast(file1)
+Sys.time(plot(NDVI[[1]]))
+
 
 
