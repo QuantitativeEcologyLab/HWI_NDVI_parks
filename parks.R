@@ -18,7 +18,7 @@ library(mgcv) #gam
 library(terra) #shape file 
 
 # set working directory
-setwd("C:/Users/justi/Documents/GitHub/HWI_parks")
+setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
 
 # importing data
 animals_involved <- read.csv("data/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
@@ -1471,6 +1471,7 @@ ABpolygon <- st_read("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
 plot(ABpolygon)
 
 BCpolygon <- st_read("data/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
+plot(BCpolygon)
 
 MBpolygon <- st_read("data/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
 plot(MBpolygon)
@@ -1618,51 +1619,215 @@ plot(ivvavik)
 
 # need polygons for 5 more parks 
 
+# merge all park polygons into one shape file ----
+parks_polygon <- dplyr::bind_rows(list(waterton_lakes,elk_island,jasper, wood_buffalo, banff, yoho, kootenay, mount_revelstoke, pacific_rim, glacier, wapusk, fundy, kouchibouguac, terra_nova, kejimkujik, aulavik, nahanni, fathom_five, point_pelee, georgian_bay_islands, thousand_islands, prince_edward_island, forillon, prince_albert, ivvavik))
+plot(parks_polygon)
+plot(parks_polygon$geometry)
+parks_geometry <- parks_polygon$geometry
+plot(parks_geometry)
+st_write(parks_polygon,"../../sf/parks_polygon.shp",driver = "ESRI Shapefile")
+
+# shapefile(x = parks_geometry, file = "C:/Users/grace/Documents/GitHub/HWI_parks/file.shp")
+
 # start looking at ndvi ----
 
 library("xml2")
 library("rvest")
 library("dplyr")
 library("terra")
+library("raster")
 
 
-
-#extract all links for each year
-url_path <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/"
-pg <- read_html(url_path)
+# loop for extracting all links for 2010 [done] ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/"
+pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
 
 LINKS <- list()
 for(i in 1:length(linkys)){
-  link <- paste(url_path, linkys[i], sep = "")
+  link <- paste(url, linkys[i], sep = "")
   LINKS[i] <- link
 }
 
 LINKS <- do.call(rbind, LINKS)
 
-#extract links for each file in each year
-for(i in 6:length(LINKS)){
-  url <- LINKS[i]
-  pag <- read_html(url)
-  ndvi_links <- paste(LINKS[i], html_attr(html_nodes(pag, "a"), "href"),  sep = "")
-  filenames <- html_attr(html_nodes(pag, "a"), "href")
-  
-for(j in 6:length(ndvi_links)){
-    url_path <- ndvi_links[j]
-    path <- paste("C:/Users/justi/Documents/GitHub/HWI_parks",filenames[j], sep="")
-    try(download.file(url_path, destfile = path))
+for(j in 6:length(linkys)){
+    url_path <- paste(url, linkys[j], sep = "")
+    path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/",linkys[j], sep="")
+    try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
     
     Sys.sleep(5)
+    
   }
   
-  Sys.sleep(5)
-}
 
-#test the files to see if they work
-file1 <- "AVHRR-Land_v005_AVH13C1_NOAA-07_19810624_c20170610041337.nc_Annotated.rds"
-file2 <- "C:/Users/justi/Documents/GitHub/HWI_parksNA"
+#test the files to see if they can plot ndvi [done]
+file1 <- "2010ndvi/2010_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc"
+file2 <- "2010ndvi/2010_dec/AVHRR-Land_v005_AVH13C1_NOAA-19_20101231_c20170406211535.nc"
 NDVI <- terra::rast(file1)
-Sys.time(plot(NDVI[[1]]))
+plot(NDVI$NDVI) # IT'S PLOTTING :DDDD
 
 
 
+# rekha's code to rasterise the downloaded ndvi ----
+# 2010ndvi----
+# make a dataframe
+jan_2010ndvi <- unique(list.files(path = 'C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/', # file for jan 
+                             pattern = ".nc", full.names = T))
+
+jan2010ndvi <- list()
+
+for(i in 1:length(jan_2010ndvi)){ 
+  r <- terra::rast(jan_2010ndvi[i])
+  c <- crop(r, parks_polygon) # crop to my polygon --> it's cropping the entire canada??
+  
+  jan2010ndvi[[i]] <- c
+  
+} #now they're all added onto the list 
+
+jan2010 <- rast(jan2010ndvi) # rasterise the list
+trial <- stack(jan2010) # stack the rasters, each day has 3 layers
+plot(trial$NDVI.1[1])
+# drop the TIMEOFDAY and QA layers 
+jan2010ndvi_only <- dropLayer(trial, c(2,3,5,6,8,9,11,12,14,15,17,18,20,21,23,24,26,27,29,30,32,33,35,36,38,39,41,42,44,45,47,48,50,51,53,54,56,57,59,60,62,63,65,66,68,69,71,72,74,75,77,78,80,81,83,84,86,87,89,90,92,93))
+plot(jan2010ndvi_only)
+
+# calculate mean of the month 
+mean <- calc(jan2010ndvi_only, mean) 
+plot(mean) 
+plot(parks_polygon, add = T)
+
+
+
+# how to crop it to my polygon??? ----
+
+trialcrop <- crop(jan2010ndvi_only, parks_polygon) # no difference between plotting and not plotting? and what section is this?
+plot(trialcrop)
+# Plot full raster and polygon                       
+plot(jan2010ndvi_only$NDVI.1)
+plot(parks_geometry,add=T) # now they overlap but is it the right extent?
+
+# Ryan's code to crop parks ----
+
+library(terra)
+library(sf)
+
+# read parks
+# parks = st_read(parks_polygon)
+
+nc.dir = "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan" #assign variable
+setwd(nc.dir) #setwd, only way this is working
+dat.dir = list.files(pattern="*.nc", all.files=TRUE, #list all files in there 
+                     full.names=FALSE)  
+
+
+jan = lapply(dat.dir, rast) #to files in the directory
+jan = rast(jan) #read that as rasters + turn it into a stack 
+names(jan) #turns jan into a list
+jan <- jan[[1]] # extract that 1 band: NDVI 
+
+st_crs(parks_polygon)
+crs(jan)
+
+# match extents
+p.ext = ext(parks_polygon)
+ext(jan) = p.ext
+
+jan.crop = crop(jan, parks_polygon) #crop and mask similar, mask is cut pieces that fell outside
+jan.mask = mask(jan, parks_polygon) # warning: [mask] CRS do not match 
+plot(jan.mask)
+jan.mean = app(jan.mask, mean)
+hist(jan.mean) # warning:[hist] a sample of4% of the cells was used (of which 100% was NA) --> it's ok
+project(jan.mean,"EPSG:4617")
+
+
+st_crs(parks_polygon)
+crs(jan)
+writeRaster(jan.mean, "../jan_mean.tif") #../ moves it up one file path in
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#source(file = "gdal.R")
+#newExtent <- extent(bbox(parks_geometry))
+
+#library(mapview)
+#mapview(sf::st_cast(parks_geometry, "MULTIPOLYGON"))
+
+
+
+
+
+#ignore below ----
+
+# corrupt <- sapply(feb_2010ndvi,
+ #                 function(filename) {
+ #                   .r <- tryCatch(rast(filename),
+  #                                 error = function(e) return(as.character(e)))
+   #                 return(is.character(.r))
+    #              }) %>%
+#  suppressWarnings()
+#corrupt
+#corrupt <- corrupt[which(corrupt)] # only keep TRUE values
+#corrupt
+
+#while(any(corrupt)) {
+  # find file names
+ # files <- substr(x = names(corrupt),
+  #                start = nchar("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/") + 1,
+   #               stop = nchar(names(corrupt)))
+  
+ # years <- substr(files,
+                 # start = nchar(files) - nchar('yyyymmdd_cyyyymmddhhmmss.nc') + 1,
+                 # stop = nchar(files) - nchar('mmdd_cyyyymmddhhmmss.nc'))
+  
+  # re-download the corrupt NDVi rasters
+#  urls <- paste0('https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/',
+#                 files)
+  
+#  lapply(1:length(urls), function(.i){
+#    path <- paste0("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/", files[.i])
+#    try(download.file(urls[.i], destfile = path))
+#  })
+  
+  # check again what files are corrupt
+#  corrupt <- sapply(names(corrupt),
+#                    function(filename) {
+#                      .r <- tryCatch(rast(filename),
+#                                     error = function(e) return(as.character(e)))
+#                      return(is.character(.r))
+#                    }) %>%
+#    suppressWarnings()
+#  corrupt <- corrupt[which(corrupt)] # only keep TRUE values
+#}
+
+# b <- raster::brick(jan_2010ndvi) + 0
+# r <- rast(b)
+
+# sizes <- file.size(feb_2010ndvi) / 1e6
+# hist(sizes, xlab = 'Approximate file size in MB')
+# feb_2010ndvi[sizes < 50]
+# plot(rast(feb_2010ndvi[sizes < 50][1]))
+
+
+# trying to ope an nc file
+# library(ncdf4)
+# nc_data <- terra::rast('2010ndvi/2010_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20100110_c20170406112342.nc')
