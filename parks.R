@@ -1685,6 +1685,7 @@ for(i in 1:length(jan_2010ndvi)){
   
 } #now they're all added onto the list 
 
+# my attempt to stacking and cropping ----
 jan2010 <- rast(jan2010ndvi) # rasterise the list
 trial <- stack(jan2010) # stack the rasters, each day has 3 layers
 plot(trial$NDVI.1[1])
@@ -1697,8 +1698,6 @@ mean <- calc(jan2010ndvi_only, mean)
 plot(mean) 
 plot(parks_polygon, add = T)
 
-
-
 # how to crop it to my polygon??? ----
 
 trialcrop <- crop(jan2010ndvi_only, parks_polygon) # no difference between plotting and not plotting? and what section is this?
@@ -1706,8 +1705,10 @@ plot(trialcrop)
 # Plot full raster and polygon                       
 plot(jan2010ndvi_only$NDVI.1)
 plot(parks_geometry,add=T) # now they overlap but is it the right extent?
+# ------
 
-# Ryan's code to crop parks ----
+
+# Ryan's code to crop parks (works) ----
 
 library(terra)
 library(sf)
@@ -1715,6 +1716,8 @@ library(sf)
 # read parks
 # parks = st_read(parks_polygon)
 
+setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
+parks = st_read('sf/parks_polygon.shp')
 nc.dir = "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan" #assign variable
 setwd(nc.dir) #setwd, only way this is working
 dat.dir = list.files(pattern="*.nc", all.files=TRUE, #list all files in there 
@@ -1726,30 +1729,23 @@ jan = rast(jan) #read that as rasters + turn it into a stack
 names(jan) #turns jan into a list
 jan <- jan[[1]] # extract that 1 band: NDVI 
 
-st_crs(parks_polygon)
-crs(jan)
+jan = project(jan, "EPSG:3005")
 
-# match extents
-p.ext = ext(parks_polygon)
-ext(jan) = p.ext
-
-jan.crop = crop(jan, parks_polygon) #crop and mask similar, mask is cut pieces that fell outside
-jan.mask = mask(jan, parks_polygon) # warning: [mask] CRS do not match 
+jan.crop = crop(jan, parks) #crop and mask similar, mask is cut pieces that fell outside
+jan.mask = mask(jan, parks) # warning: [mask] CRS do not match 
 plot(jan.mask)
-jan.mean = app(jan.mask, mean)
-hist(jan.mean) # warning:[hist] a sample of4% of the cells was used (of which 100% was NA) --> it's ok
-project(jan.mean,"EPSG:4617")
+jan.mean = app(jan.mask, mean) # calculate mean of 2010 Jan 
+plot(jan.mean) # each raster has different coverages --> lots of NA when taking mean and so no values when plotted 
+names(jan.mean) = "jan_2010_meanNDVI" # turns jan.mean into a list??
+# hist(jan.mean) # warning:[hist] a sample of4% of the cells was used (of which 100% was NA) --> it's ok
+# project(jan.mean,"EPSG:4617")
 
 
-st_crs(parks_polygon)
-crs(jan)
-writeRaster(jan.mean, "../jan_mean.tif") #../ moves it up one file path in
+# st_crs(parks_polygon)
+# crs(jan)
+writeRaster(jan.mean, "../jan_mean.tif", overwrite = TRUE) #../ moves it up one file path in
 
-
-
-
-
-
+# next step: extract each value to parks? and do the same for the other 11 months 
 
 
 
