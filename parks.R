@@ -1469,42 +1469,55 @@ plot(YTshape)
 
 ABpolygon <- st_read("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
 plot(ABpolygon)
+saveRDS(ABpolygon,file ="rds/ABpolygon.rds")
 
 BCpolygon <- st_read("data/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
 plot(BCpolygon)
+saveRDS(BCpolygon,file ="rds/BCpolygon.rds")
 
 MBpolygon <- st_read("data/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
 plot(MBpolygon)
+saveRDS(MBpolygon,file ="rds/MBpolygon.rds")
 
 NBpolygon <- st_read("data/CLAB_NB_2023-09-08/CLAB_NB_2023-09-08.shp")
 plot(NBpolygon)
+saveRDS(NBpolygon,file ="rds/NBpolygon.rds")
 
 NLpolygon <- st_read("data/CLAB_NL_2023-09-08/CLAB_NL_2023-09-08.shp")
 plot(NLpolygon)
+saveRDS(NLpolygon,file ="rds/NLpolygon.rds")
 
 NSpolygon <- st_read("data/CLAB_NS_2023-09-08/CLAB_NS_2023-09-08.shp")
 plot(NSpolygon)
+saveRDS(NSpolygon,file ="rds/NSpolygon.rds")
 
 NTpolygon <- st_read("data/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
 plot(NTpolygon)
+saveRDS(NTpolygon,file ="rds/NTpolygon.rds")
 
 NUpolygon <- st_read("data/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
 plot(NUpolygon)
+saveRDS(NUpolygon,file ="rds/NUpolygon.rds")
 
 ONpolygon <- st_read("data/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
 plot(ONpolygon)
+saveRDS(ONpolygon,file ="rds/ONpolygon.rds")
 
 PEpolygon <- st_read("data/CLAB_PE_2023-09-08/CLAB_PE_2023-09-08.shp")
 plot(PEpolygon)
+saveRDS(PEpolygon,file ="rds/PEpolygon.rds")
 
 QCpolygon <- st_read("data/CLAB_QC_2023-09-08/CLAB_QC_2023-09-08.shp")
 plot(QCpolygon)
+saveRDS(QCpolygon,file ="rds/QCpolygon.rds")
 
 SKpolygon <- st_read("data/CLAB_SK_2023-09-08/CLAB_SK_2023-09-08.shp")
 plot(SKpolygon)
+saveRDS(SKpolygon,file ="rds/SKpolygon.rds")
 
 YTpolygon <- st_read("data/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
 plot(YTpolygon)
+saveRDS(YTpolygon,file ="rds/YTpolygon.rds")
 
 # fitering for my 31 parks out of all the parks in each polygon ----
 
@@ -1512,18 +1525,23 @@ plot(YTpolygon)
 
 waterton_lakes <- ABpolygon[ABpolygon$CLAB_ID == "WATE", ]
 plot(waterton_lakes)
+saveRDS(waterton_lakes,file ="rds/waterton_lakes.rds")
 
 elk_island <- ABpolygon[ABpolygon$CLAB_ID == "ELKI", ]
 plot(elk_island)
+saveRDS(elk_island,file ="rds/elk_island.rds")
 
 jasper <- ABpolygon[ABpolygon$CLAB_ID == "JASP", ]
 plot(jasper)
+saveRDS(jasper,file ="rds/jasper.rds")
 
 wood_buffalo <- ABpolygon[ABpolygon$CLAB_ID == "WOOD", ]
 plot(wood_buffalo)
+saveRDS(wood_buffalo,file ="rds/wood_buffalo.rds")
 
 banff <- ABpolygon[ABpolygon$CLAB_ID == "BANF", ]
 plot(banff)
+saveRDS(banff,file ="rds/banff.rds")
 
 # no polygon for grasslands
 
@@ -1531,23 +1549,29 @@ plot(banff)
 
 yoho <- BCpolygon[BCpolygon$CLAB_ID == "YOHO", ]
 plot(yoho)
+saveRDS(yoho,file ="rds/yoho.rds")
 
 kootenay <- BCpolygon[BCpolygon$CLAB_ID == "KOOT", ]
 plot(kootenay)
+saveRDS(kootenay,file ="rds/kootenay.rds")
 
 mount_revelstoke <- BCpolygon[BCpolygon$CLAB_ID == "REVE", ]
 plot(mount_revelstoke)
+saveRDS(mount_revelstoke,file ="rds/mount_revelstoke.rds")
 
 pacific_rim <- BCpolygon[BCpolygon$CLAB_ID == "PRIM", ]
 plot(pacific_rim)
+saveRDS(pacific_rim,file ="rds/pacific_rim.rds")
 
 glacier <- BCpolygon[BCpolygon$CLAB_ID == "GLAC", ]
 plot(glacier)
+saveRDS(glacier,file ="rds/glacier.rds")
 
 # MB
 
 wapusk <- MBpolygon[MBpolygon$CLAB_ID == "WAPU", ]
 plot(wapusk)
+saveRDS(wapusk,file ="rds/wapusk.rds")
 
 # no polygon for prince of wales fort
 
@@ -1555,19 +1579,23 @@ plot(wapusk)
 
 fundy <- NBpolygon[NBpolygon$CLAB_ID == "FUND", ]
 plot(fundy)
+saveRDS(fundy,file ="rds/fundy.rds")
 
 kouchibouguac <- NBpolygon[NBpolygon$CLAB_ID == "KOUC", ]
 plot(kouchibouguac)
+saveRDS(kouchibouguac,file ="rds/kouchibouguac.rds")
 
 # NL
 
 terra_nova <- NLpolygon[NLpolygon$CLAB_ID == "NOVA", ]
 plot(terra_nova)
+saveRDS(terra_nova,file ="rds/terra_nova.rds")
 
 # NS
 
 kejimkujik <- NSpolygon[NSpolygon$CLAB_ID == "KEJI", ]
 plot(kejimkujik)
+saveRDS(kejimkujik,file ="rds/kejimkijik.rds")
 
 # no polygon on sable island
 
@@ -1575,9 +1603,11 @@ plot(kejimkujik)
 
 aulavik <- NTpolygon[NTpolygon$CLAB_ID == "AULA", ]
 plot(aulavik)
+saveRDS(aulavik,file ="rds/aulavik.rds")
 
 nahanni <- NTpolygon[NTpolygon$CLAB_ID == "NAHA", ]
 plot(nahanni)
+saveRDS(nahanni,file ="rds/nahanni.rds")
 
 # no polygon for grizzly bear
 
@@ -1585,15 +1615,19 @@ plot(nahanni)
 
 fathom_five <- ONpolygon[ONpolygon$CLAB_ID == "FIVE", ]
 plot(fathom_five)
+saveRDS(fathom_five,file ="rds/fathom_five.rds")
 
 point_pelee <- ONpolygon[ONpolygon$CLAB_ID == "PELE", ]
 plot(point_pelee)
+saveRDS(point_pelee,file ="rds/point_pelee.rds")
 
 georgian_bay_islands <- ONpolygon[ONpolygon$CLAB_ID == "GBIS", ]
 plot(georgian_bay_islands)
+saveRDS(georgian_bay_islands,file ="rds/georgian_bay_islands.rds")
 
 thousand_islands <- ONpolygon[ONpolygon$CLAB_ID == "THIS", ]
 plot(thousand_islands)
+saveRDS(thousand_islands,file ="rds/thousand_islands.rds")
 
 # no polygon for bruce peninsula
 
@@ -1601,21 +1635,25 @@ plot(thousand_islands)
 
 prince_edward_island <- PEpolygon[PEpolygon$CLAB_ID == "PEIS", ]
 plot(prince_edward_island)
+saveRDS(prince_edward_island,file ="rds/prince_edward_island.rds")
 
 # QC
 
 forillon <- QCpolygon[QCpolygon$CLAB_ID == "FORI", ]
 plot(forillon)
+saveRDS(forillon,file ="rds/forillon.rds")
 
 # SK
 
 prince_albert <- SKpolygon[SKpolygon$CLAB_ID == "PALB", ]
 plot(prince_albert)
+saveRDS(prince_albert,file ="rds/prince_albert.rds")
 
 # YT
 
 ivvavik <- YTpolygon[YTpolygon$CLAB_ID == "IVVA", ]
 plot(ivvavik)
+saveRDS(ivvavik,file ="rds/ivvavik.rds")
 
 # need polygons for 5 more parks 
 
@@ -1686,29 +1724,29 @@ for(i in 1:length(jan_2010ndvi)){
 } #now they're all added onto the list 
 
 # my attempt to stacking and cropping ----
-jan2010 <- rast(jan2010ndvi) # rasterise the list
-trial <- stack(jan2010) # stack the rasters, each day has 3 layers
-plot(trial$NDVI.1[1])
+# jan2010 <- rast(jan2010ndvi) # rasterise the list
+#trial <- stack(jan2010) # stack the rasters, each day has 3 layers
+#plot(trial$NDVI.1[1])
 # drop the TIMEOFDAY and QA layers 
-jan2010ndvi_only <- dropLayer(trial, c(2,3,5,6,8,9,11,12,14,15,17,18,20,21,23,24,26,27,29,30,32,33,35,36,38,39,41,42,44,45,47,48,50,51,53,54,56,57,59,60,62,63,65,66,68,69,71,72,74,75,77,78,80,81,83,84,86,87,89,90,92,93))
-plot(jan2010ndvi_only)
+#jan2010ndvi_only <- dropLayer(trial, c(2,3,5,6,8,9,11,12,14,15,17,18,20,21,23,24,26,27,29,30,32,33,35,36,38,39,41,42,44,45,47,48,50,51,53,54,56,57,59,60,62,63,65,66,68,69,71,72,74,75,77,78,80,81,83,84,86,87,89,90,92,93))
+#plot(jan2010ndvi_only)
 
 # calculate mean of the month 
-mean <- calc(jan2010ndvi_only, mean) 
-plot(mean) 
-plot(parks_polygon, add = T)
+#mean <- calc(jan2010ndvi_only, mean) 
+#plot(mean) 
+#plot(parks_polygon, add = T)
 
 # how to crop it to my polygon??? ----
 
-trialcrop <- crop(jan2010ndvi_only, parks_polygon) # no difference between plotting and not plotting? and what section is this?
-plot(trialcrop)
+#trialcrop <- crop(jan2010ndvi_only, parks_polygon) # no difference between plotting and not plotting? and what section is this?
+#plot(trialcrop)
 # Plot full raster and polygon                       
-plot(jan2010ndvi_only$NDVI.1)
-plot(parks_geometry,add=T) # now they overlap but is it the right extent?
+#plot(jan2010ndvi_only$NDVI.1)
+#plot(parks_geometry,add=T) # now they overlap but is it the right extent?
 # ------
 
 
-# Ryan's code to crop parks (works) ----
+# Ryan's code to crop parks (works) ---- include reprojecting parks
 
 library(terra)
 library(sf)
@@ -1717,19 +1755,44 @@ library(sf)
 # parks = st_read(parks_polygon)
 
 setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
-parks = st_read('sf/parks_polygon.shp')
+# parks = st_read('sf/parks_polygon.shp')
 nc.dir = "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan" #assign variable
 setwd(nc.dir) #setwd, only way this is working
 dat.dir = list.files(pattern="*.nc", all.files=TRUE, #list all files in there 
                      full.names=FALSE)  
 
+library(ncdf4)
+nc.file <- nc_open("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc")
+names(nc.file$var) #check layers
+
 
 jan = lapply(dat.dir, rast) #to files in the directory
-jan = rast(jan) #read that as rasters + turn it into a stack 
+jan = stack(jan,varname = "NDVI") #read that as rasters + turn it into a stack 
 names(jan) #turns jan into a list
 jan <- jan[[1]] # extract that 1 band: NDVI 
+plot(jan) #why is there only 1 left?
 
-jan = project(jan, "EPSG:3005")
+#jan_reproject <- spTransform(jan, crs(jasper)) X work
+jasper_shape <- readRDS("../../rds/jasper.rds")
+jan_reproject <- terra::project(jan, crs(jasper_shape), method="near") #this works
+plot(jan_reproject) #success but why only one?
+plot(jasper_shape) # how to select 1 layer?
+
+#jan = project(jan, "EPSG:3005")
+
+jan.crop = crop(jan_reproject, jasper_shape) #crop and mask similar, mask is cut pieces that fell outside
+#jan.mask = mask(jan_reproject, jasper) # warning: [mask] CRS do not match 
+#plot(jan.mask) #mask didn't work
+plot(jan.crop) #where did all the dates go?
+jan.mean = app(jan.crop, mean, na.rm = TRUE) # calculate mean of 2010 Jan 
+plot(jan.mean) # each raster has different coverages --> lots of NA when taking mean and so no values when plotted 
+names(jan.mean)
+plot(jasper) #how to take 1 plot from jasper and put the ndvi together?
+
+
+
+
+
 
 jan.crop = crop(jan, parks) #crop and mask similar, mask is cut pieces that fell outside
 jan.mask = mask(jan, parks) # warning: [mask] CRS do not match 
@@ -1745,17 +1808,257 @@ names(jan.mean) = "jan_2010_meanNDVI" # turns jan.mean into a list??
 # crs(jan)
 writeRaster(jan.mean, "../jan_mean.tif", overwrite = TRUE) #../ moves it up one file path in
 
+
+
+
+
+
+
+
 # next step: extract each value to parks? and do the same for the other 11 months 
 
+# download 2011-2021 data ----
+# loop for extracting all links for 2011 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2011/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
 
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
 
+LINKS <- do.call(rbind, LINKS)
 
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
 
+# loop for extracting all links for 2012 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2012/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
 
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
 
+LINKS <- do.call(rbind, LINKS)
 
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2012ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
 
+# loop for extracting all links for 2013 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2013/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
 
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2013ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2014 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2014/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2014ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2015 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2015/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2015ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2016 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2016/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2016ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2017 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2017/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2017ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2018 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2018/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2018ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2019 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2019/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2019ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2020 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2020/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2020ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2021 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2021/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2021ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
 
 
 
