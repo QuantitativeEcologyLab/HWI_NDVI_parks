@@ -1746,10 +1746,11 @@ for(i in 1:length(jan_2010ndvi)){
 # ------
 
 
-# Ryan's code to crop parks (works) ---- include reprojecting parks
+# Ryan's code to crop parks (works) ---- 
 
 library(terra)
 library(sf)
+library(raster)
 
 # read parks
 # parks = st_read(parks_polygon)
@@ -1761,52 +1762,56 @@ setwd(nc.dir) #setwd, only way this is working
 dat.dir = list.files(pattern="*.nc", all.files=TRUE, #list all files in there 
                      full.names=FALSE)  
 
+# trial to varname in selecting NDVI in 1 file
 library(ncdf4)
 nc.file <- nc_open("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc")
 names(nc.file$var) #check layers
+nc.file <- raster("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc", varname = "NDVI")
+plot(nc.file)
 
 
-jan = lapply(dat.dir, rast) #to files in the directory
-jan = stack(jan,varname = "NDVI") #read that as rasters + turn it into a stack 
-names(jan) #turns jan into a list
-jan <- jan[[1]] # extract that 1 band: NDVI 
-plot(jan) #why is there only 1 left?
+jan = lapply(dat.dir, raster) #to files in the directory, make jan files raster layers (varname "NDVI" was automatically chosen)
+jan = stack(jan) #turn it into a raster stack 
+jan = rast(jan) #turn them into spatrasters
+saveRDS(jan,file ="../../rds/jan2010raster.rds")
+jan <- readRDS("../../rds/jan2010raster.rds")
+names(jan) #turns jan into a list --> only NDVI now :)
+plot(jan)
 
 #jan_reproject <- spTransform(jan, crs(jasper)) X work
 jasper_shape <- readRDS("../../rds/jasper.rds")
-jan_reproject <- terra::project(jan, crs(jasper_shape), method="near") #this works
-plot(jan_reproject) #success but why only one?
-plot(jasper_shape) # how to select 1 layer?
+jasper_rast <- rast(jasper_shape)
 
-#jan = project(jan, "EPSG:3005")
+# reproject 2010 jan into park projection ----
+jan_reproject <- terra::project(jan, crs(jasper_shape), method="near") # error:invalid latitude?
+plot(jan_reproject) # Error in graphics::par(old.par) : invalid value specified for graphical parameter "pin"
+saveRDS(jan_reproject,file ="../../rds/jan2010reproject.rds")
+jan2010_reproject <- readRDS("../../rds/jan2010reproject.rds")
 
-jan.crop = crop(jan_reproject, jasper_shape) #crop and mask similar, mask is cut pieces that fell outside
-#jan.mask = mask(jan_reproject, jasper) # warning: [mask] CRS do not match 
-#plot(jan.mask) #mask didn't work
-plot(jan.crop) #where did all the dates go?
-jan.mean = app(jan.crop, mean, na.rm = TRUE) # calculate mean of 2010 Jan 
-plot(jan.mean) # each raster has different coverages --> lots of NA when taking mean and so no values when plotted 
-names(jan.mean)
-plot(jasper) #how to take 1 plot from jasper and put the ndvi together?
+plot(jan2010_reproject)
+
+plot(jasper_shape[7]) # selected for 1 layer plot
+
+# jan.crop = crop(jan2010_reproject, jasper_shape, mask = TRUE) #my jasper shape is appearing but looks weird
+#crop and mask similar, mask is cut pieces that fell outside
+jan.crop = crop(jan2010_reproject, jasper_shape, mask = TRUE) # this one is only my jasper shape
+# jan.mask = mask(jan2010_reproject, jasper_rast) 
+# plot(jan.mask) #mask didn't work --> everything's gone when I mask them
+plot(jan.crop) 
+saveRDS(jan.crop,file ="../../rds/jan2010crop.rds")
+jan2010crop <- readRDS("../../rds/jan2010crop.rds")
+
+# taking mean for 2010 jan ----
+jan.crop.mean = app(jan2010crop, mean, na.rm = TRUE) #get the mean for 2010 jan
+names(jan2010mean) # turn it into a list
+plot(jan.crop.mean)
+saveRDS(jan.crop.mean,file ="../../rds/jan2010mean.rds")
+jan2010mean <- readRDS("../../rds/jan2010mean.rds")
+plot(jan2010mean) #got the mean for 2010 jan!!
 
 
 
 
-
-
-jan.crop = crop(jan, parks) #crop and mask similar, mask is cut pieces that fell outside
-jan.mask = mask(jan, parks) # warning: [mask] CRS do not match 
-plot(jan.mask)
-jan.mean = app(jan.mask, mean) # calculate mean of 2010 Jan 
-plot(jan.mean) # each raster has different coverages --> lots of NA when taking mean and so no values when plotted 
-names(jan.mean) = "jan_2010_meanNDVI" # turns jan.mean into a list??
-# hist(jan.mean) # warning:[hist] a sample of4% of the cells was used (of which 100% was NA) --> it's ok
-# project(jan.mean,"EPSG:4617")
-
-
-# st_crs(parks_polygon)
-# crs(jan)
-writeRaster(jan.mean, "../jan_mean.tif", overwrite = TRUE) #../ moves it up one file path in
 
 
 
@@ -2063,18 +2068,6 @@ for(j in 6:length(linkys)){
 
 
 
-
-
-#source(file = "gdal.R")
-#newExtent <- extent(bbox(parks_geometry))
-
-#library(mapview)
-#mapview(sf::st_cast(parks_geometry, "MULTIPOLYGON"))
-
-
-
-
-
 #ignore below ----
 
 # corrupt <- sapply(feb_2010ndvi,
@@ -2117,16 +2110,3 @@ for(j in 6:length(linkys)){
 #    suppressWarnings()
 #  corrupt <- corrupt[which(corrupt)] # only keep TRUE values
 #}
-
-# b <- raster::brick(jan_2010ndvi) + 0
-# r <- rast(b)
-
-# sizes <- file.size(feb_2010ndvi) / 1e6
-# hist(sizes, xlab = 'Approximate file size in MB')
-# feb_2010ndvi[sizes < 50]
-# plot(rast(feb_2010ndvi[sizes < 50][1]))
-
-
-# trying to ope an nc file
-# library(ncdf4)
-# nc_data <- terra::rast('2010ndvi/2010_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20100110_c20170406112342.nc')
