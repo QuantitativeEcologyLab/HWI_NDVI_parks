@@ -1816,13 +1816,13 @@ mean_ndvi_jasper_scaled <- jan2010mean * 0.0001
 plot(mean_ndvi_jasper_scaled)
 saveRDS(mean_ndvi_jasper_scaled,file ="../../rds/jan2010mean_scaled.rds")
 JASPjan2010mean_scaled <- readRDS("../../rds/jan2010mean_scaled.rds")
-plot(jan2010mean_scaled)
+plot(JASPjan2010mean_scaled)
 
 #................................................
 
 # build for loops for all months in 2010 in jasper ----
 # feb
-# Set the directory containing the NetCDF files
+# Set the directory containing the nc files
 nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_feb" 
 setwd(nc.dir)
 
@@ -1842,6 +1842,247 @@ for (file_path in dat.dir) {
   JASPfeb2010mean_scaled <- readRDS("../../rds/jasper_2010feb_scaled.rds")
   
 }
+
+# mar
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_mar" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  mar <- lapply(dat.dir, raster)
+  mar <- stack(mar)
+  mar <- rast(mar)
+  mar.crop <- crop(mar, jasper_shape, mask = TRUE)
+  mar_reproject <- terra::project(mar.crop, crs(jasper_shape), method = "near")
+  mar.crop.mean <- app(mar_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- mar.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010mar_scaled.rds")
+  JASPmar2010mean_scaled <- readRDS("../../rds/jasper_2010mar_scaled.rds")
+  plot(JASPmar2010mean_scaled)
+}
+
+# apr
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_apr" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  apr <- lapply(dat.dir, raster)
+  apr <- stack(apr)
+  apr <- rast(apr)
+  apr.crop <- crop(apr, jasper_shape, mask = TRUE)
+  apr_reproject <- terra::project(apr.crop, crs(jasper_shape), method = "near")
+  apr.crop.mean <- app(apr_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- apr.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010apr_scaled.rds")
+  JASPapr2010mean_scaled <- readRDS("../../rds/jasper_2010apr_scaled.rds")
+  plot(JASPapr2010mean_scaled)
+}
+
+# may
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_may" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  may <- lapply(dat.dir, raster)
+  may <- stack(may)
+  may <- rast(may)
+  may.crop <- crop(may, jasper_shape, mask = TRUE)
+  may_reproject <- terra::project(may.crop, crs(jasper_shape), method = "near")
+  may.crop.mean <- app(may_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- feb.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010may_scaled.rds")
+  JASPmay2010mean_scaled <- readRDS("../../rds/jasper_2010may_scaled.rds")
+  plot(JASPmay2010mean_scaled)
+}
+
+# jun
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jun" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  jun <- lapply(dat.dir, raster)
+  jun <- stack(jun)
+  jun <- rast(jun)
+  jun.crop <- crop(jun, jasper_shape, mask = TRUE)
+  jun_reproject <- terra::project(jun.crop, crs(jasper_shape), method = "near")
+  jun.crop.mean <- app(jun_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- jun.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010jun_scaled.rds")
+  JASPjun2010mean_scaled <- readRDS("../../rds/jasper_2010jun_scaled.rds")
+  plot(JASPjun2010mean_scaled)
+}
+
+# jul
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jul" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  jul <- lapply(dat.dir, raster)
+  jul <- stack(jul)
+  jul <- rast(jul)
+  jul.crop <- crop(jul, jasper_shape, mask = TRUE)
+  jul_reproject <- terra::project(jul.crop, crs(jasper_shape), method = "near")
+  jul.crop.mean <- app(jul_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- jul.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010jul_scaled.rds")
+  JASPjul2010mean_scaled <- readRDS("../../rds/jasper_2010jul_scaled.rds")
+  plot(JASPjul2010mean_scaled)
+}
+
+# aug
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_aug" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  aug <- lapply(dat.dir, raster)
+  aug <- stack(aug)
+  aug <- rast(aug)
+  aug.crop <- crop(aug, jasper_shape, mask = TRUE)
+  aug_reproject <- terra::project(aug.crop, crs(jasper_shape), method = "near")
+  aug.crop.mean <- app(aug_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- aug.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010aug_scaled.rds")
+  JASPaug2010mean_scaled <- readRDS("../../rds/jasper_2010aug_scaled.rds")
+  plot(JASPaug2010mean_scaled)
+}
+
+# sep
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_sep" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  sep <- lapply(dat.dir, raster)
+  sep <- stack(sep)
+  sep <- rast(sep)
+  sep.crop <- crop(sep, jasper_shape, mask = TRUE)
+  sep_reproject <- terra::project(sep.crop, crs(jasper_shape), method = "near")
+  sep.crop.mean <- app(sep_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- sep.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010sep_scaled.rds")
+  JASPsep2010mean_scaled <- readRDS("../../rds/jasper_2010sep_scaled.rds")
+  plot(JASPsep2010mean_scaled)
+}
+
+# oct
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_oct" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  oct <- lapply(dat.dir, raster)
+  oct <- stack(oct)
+  oct <- rast(oct)
+  oct.crop <- crop(oct, jasper_shape, mask = TRUE)
+  oct_reproject <- terra::project(oct.crop, crs(jasper_shape), method = "near")
+  oct.crop.mean <- app(oct_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- oct.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010oct_scaled.rds")
+  JASPoct2010mean_scaled <- readRDS("../../rds/jasper_2010oct_scaled.rds")
+  plot(JASPoct2010mean_scaled)
+}
+
+# nov
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_nov" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  nov <- lapply(dat.dir, raster)
+  nov <- stack(nov)
+  nov <- rast(nov)
+  nov.crop <- crop(nov, jasper_shape, mask = TRUE)
+  nov_reproject <- terra::project(nov.crop, crs(jasper_shape), method = "near")
+  nov.crop.mean <- app(nov_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- nov.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010nov_scaled.rds")
+  JASPnov2010mean_scaled <- readRDS("../../rds/jasper_2010nov_scaled.rds")
+  plot(JASPnov2010mean_scaled)
+}
+
+# dec
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_dec" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  dec <- lapply(dat.dir, raster)
+  dec <- stack(dec)
+  dec <- rast(dec)
+  dec.crop <- crop(dec, jasper_shape, mask = TRUE)
+  dec_reproject <- terra::project(dec.crop, crs(jasper_shape), method = "near")
+  dec.crop.mean <- app(dec_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- dec.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010dec_scaled.rds")
+  JASPdec2010mean_scaled <- readRDS("../../rds/jasper_2010dec_scaled.rds")
+  plot(JASPdec2010mean_scaled)
+}
+
+#take a look at all the 2010 jasper mean plots
+par(mfrow = c(3, 4))
+plot(JASPjan2010mean_scaled)
+plot(JASPfeb2010mean_scaled)
+plot(JASPmar2010mean_scaled)
+plot(JASPapr2010mean_scaled)
+plot(JASPmay2010mean_scaled)
+plot(JASPjun2010mean_scaled)
+plot(JASPjul2010mean_scaled)
+plot(JASPaug2010mean_scaled)
+plot(JASPsep2010mean_scaled)
+plot(JASPoct2010mean_scaled)
+plot(JASPnov2010mean_scaled)
+plot(JASPdec2010mean_scaled)
+
+
+
+
+
+
 
 
 
