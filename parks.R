@@ -18,7 +18,7 @@ library(mgcv) #gam
 library(terra) #shape file 
 
 # set working directory
-setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
+# setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
 
 # importing data
 animals_involved <- read.csv("data/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
@@ -1755,68 +1755,93 @@ library(raster)
 # read parks
 # parks = st_read(parks_polygon)
 
-setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
+#setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
 # parks = st_read('sf/parks_polygon.shp')
 nc.dir = "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan" #assign variable
 setwd(nc.dir) #setwd, only way this is working
 dat.dir = list.files(pattern="*.nc", all.files=TRUE, #list all files in there 
                      full.names=FALSE)  
 
-# trial to varname in selecting NDVI in 1 file
-library(ncdf4)
-nc.file <- nc_open("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc")
-names(nc.file$var) #check layers
-nc.file <- raster("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc", varname = "NDVI")
-plot(nc.file)
+# # trial to varname in selecting NDVI in 1 file
+# library(ncdf4)
+# nc.file <- nc_open("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc")
+# #names(nc.file$var) #check layers
+# nc.file <- raster("AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc", varname = "NDVI")
+# #plot(nc.file)
 
 
 jan = lapply(dat.dir, raster) #to files in the directory, make jan files raster layers (varname "NDVI" was automatically chosen)
 jan = stack(jan) #turn it into a raster stack 
 jan = rast(jan) #turn them into spatrasters
-saveRDS(jan,file ="../../rds/jan2010raster.rds")
-jan <- readRDS("../../rds/jan2010raster.rds")
+#saveRDS(jan,file ="../../rds/jan2010raster.rds")
+#jan <- readRDS("../../rds/jan2010raster.rds")
 names(jan) #turns jan into a list --> only NDVI now :)
-plot(jan)
+#plot(jan)
 
-#jan_reproject <- spTransform(jan, crs(jasper)) X work
 jasper_shape <- readRDS("../../rds/jasper.rds")
-jasper_rast <- rast(jasper_shape)
 
-# reproject 2010 jan into park projection ----
-jan_reproject <- terra::project(jan, crs(jasper_shape), method="near") # error:invalid latitude?
-plot(jan_reproject) # Error in graphics::par(old.par) : invalid value specified for graphical parameter "pin"
-saveRDS(jan_reproject,file ="../../rds/jan2010reproject.rds")
-jan2010_reproject <- readRDS("../../rds/jan2010reproject.rds")
-
-plot(jan2010_reproject)
-
-plot(jasper_shape[7]) # selected for 1 layer plot
 
 # jan.crop = crop(jan2010_reproject, jasper_shape, mask = TRUE) #my jasper shape is appearing but looks weird
 #crop and mask similar, mask is cut pieces that fell outside
-jan.crop = crop(jan2010_reproject, jasper_shape, mask = TRUE) # this one is only my jasper shape
+jan.crop = crop(jan, jasper_shape, mask = TRUE) # this one is only my jasper shape
 # jan.mask = mask(jan2010_reproject, jasper_rast) 
 # plot(jan.mask) #mask didn't work --> everything's gone when I mask them
 plot(jan.crop) 
-saveRDS(jan.crop,file ="../../rds/jan2010crop.rds")
-jan2010crop <- readRDS("../../rds/jan2010crop.rds")
+#saveRDS(jan.crop,file ="../../rds/jan2010crop.rds")
+#jan2010crop <- readRDS("../../rds/jan2010crop.rds")
+
+
+#jan_reproject <- spTransform(jan, crs(jasper)) X work
+#jasper_shape <- readRDS("../../rds/jasper.rds")
+#jasper <- crop(nc.file, jasper_shape)
+#jasper_reproj <- terra::resample(jasper, "+proj=longlat +datum=WGS84 +no_defs")
+
+# reproject 2010 jan into park projection ----
+jan_reproject <- terra::project(jan.crop, crs(jasper_shape), method="near") # error:invalid latitude?
+plot(jan_reproject) 
+saveRDS(jan_reproject,file ="../../rds/jan2010reproject.rds")
+jan2010_reproject <- readRDS("../../rds/jan2010reproject.rds")
+plot(jan2010_reproject)
 
 # taking mean for 2010 jan ----
-jan.crop.mean = app(jan2010crop, mean, na.rm = TRUE) #get the mean for 2010 jan
-names(jan2010mean) # turn it into a list
-plot(jan.crop.mean)
+jan.crop.mean = app(jan_reproject, mean, na.rm = TRUE) #get the mean for 2010 jan
+names(jan.crop.mean) # turn it into a list
+plot(jan.crop.mean) 
 saveRDS(jan.crop.mean,file ="../../rds/jan2010mean.rds")
 jan2010mean <- readRDS("../../rds/jan2010mean.rds")
-plot(jan2010mean) #got the mean for 2010 jan!!
+plot(jan2010mean) #got the mean for 2010 jan --> change units for ndvi 
 
+# rescale the NDVI values from [0, 2500] to [-1, 1]
+mean_ndvi_jasper_scaled <- jan2010mean * 0.0001
+plot(mean_ndvi_jasper_scaled)
+saveRDS(mean_ndvi_jasper_scaled,file ="../../rds/jan2010mean_scaled.rds")
+JASPjan2010mean_scaled <- readRDS("../../rds/jan2010mean_scaled.rds")
+plot(jan2010mean_scaled)
 
+#................................................
 
+# build for loops for all months in 2010 in jasper ----
+# feb
+# Set the directory containing the NetCDF files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_feb" 
+setwd(nc.dir)
 
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-
-
-
-
+# for loop for all the files in the feb2010 directory
+for (file_path in dat.dir) {
+  feb <- lapply(dat.dir, raster)
+  feb <- stack(feb)
+  feb <- rast(feb)
+  feb.crop <- crop(feb, jasper_shape, mask = TRUE)
+  feb_reproject <- terra::project(feb.crop, crs(jasper_shape), method = "near")
+  feb.crop.mean <- app(feb_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- feb.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2010feb_scaled.rds")
+  JASPfeb2010mean_scaled <- readRDS("../../rds/jasper_2010feb_scaled.rds")
+  
+}
 
 
 
