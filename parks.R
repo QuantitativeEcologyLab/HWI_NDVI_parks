@@ -16,6 +16,11 @@ library(grDevices) #for creating colour palette
 library(fBasics) #for creating colour palette
 library(mgcv) #gam
 library(terra) #shape file 
+library("xml2")
+library("rvest")
+library("dplyr")
+library("terra")
+library("raster")
 
 # set working directory
 # setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
@@ -1710,18 +1715,18 @@ plot(NDVI$NDVI) # IT'S PLOTTING :DDDD
 # rekha's code to rasterise the downloaded ndvi ----
 # 2010ndvi----
 # make a dataframe
-jan_2010ndvi <- unique(list.files(path = 'C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/', # file for jan 
-                             pattern = ".nc", full.names = T))
+# jan_2010ndvi <- unique(list.files(path = 'C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/', # file for jan 
+                             #pattern = ".nc", full.names = T))
 
-jan2010ndvi <- list()
+#jan2010ndvi <- list()
 
-for(i in 1:length(jan_2010ndvi)){ 
-  r <- terra::rast(jan_2010ndvi[i])
-  c <- crop(r, parks_polygon) # crop to my polygon --> it's cropping the entire canada??
+#for(i in 1:length(jan_2010ndvi)){ 
+  #r <- terra::rast(jan_2010ndvi[i])
+  #c <- crop(r, parks_polygon) # crop to my polygon --> it's cropping the entire canada??
   
-  jan2010ndvi[[i]] <- c
+  #jan2010ndvi[[i]] <- c
   
-} #now they're all added onto the list 
+#} #now they're all added onto the list 
 
 # my attempt to stacking and cropping ----
 # jan2010 <- rast(jan2010ndvi) # rasterise the list
@@ -1751,6 +1756,7 @@ for(i in 1:length(jan_2010ndvi)){
 library(terra)
 library(sf)
 library(raster)
+library(xml2)
 
 # read parks
 # parks = st_read(parks_polygon)
@@ -1851,7 +1857,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the mar2010 directory
 for (file_path in dat.dir) {
   mar <- lapply(dat.dir, raster)
   mar <- stack(mar)
@@ -1873,7 +1879,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the apr2010 directory
 for (file_path in dat.dir) {
   apr <- lapply(dat.dir, raster)
   apr <- stack(apr)
@@ -1895,7 +1901,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the may2010 directory
 for (file_path in dat.dir) {
   may <- lapply(dat.dir, raster)
   may <- stack(may)
@@ -1917,7 +1923,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the jun2010 directory
 for (file_path in dat.dir) {
   jun <- lapply(dat.dir, raster)
   jun <- stack(jun)
@@ -1939,7 +1945,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the jul2010 directory
 for (file_path in dat.dir) {
   jul <- lapply(dat.dir, raster)
   jul <- stack(jul)
@@ -1961,7 +1967,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the aug2010 directory
 for (file_path in dat.dir) {
   aug <- lapply(dat.dir, raster)
   aug <- stack(aug)
@@ -1983,7 +1989,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the sep2010 directory
 for (file_path in dat.dir) {
   sep <- lapply(dat.dir, raster)
   sep <- stack(sep)
@@ -2005,7 +2011,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the oct2010 directory
 for (file_path in dat.dir) {
   oct <- lapply(dat.dir, raster)
   oct <- stack(oct)
@@ -2027,7 +2033,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the nov2010 directory
 for (file_path in dat.dir) {
   nov <- lapply(dat.dir, raster)
   nov <- stack(nov)
@@ -2049,7 +2055,7 @@ setwd(nc.dir)
 # List all files in the directory with the specified pattern
 dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
 
-# for loop for all the files in the feb2010 directory
+# for loop for all the files in the dec2010 directory
 for (file_path in dat.dir) {
   dec <- lapply(dat.dir, raster)
   dec <- stack(dec)
@@ -2089,7 +2095,7 @@ plot(JASPdec2010mean_scaled)
 # next step: extract each value to parks? and do the same for the other 11 months 
 
 # download 2011-2021 data ----
-# loop for extracting all links for 2011 ----
+# loop for extracting all links for 2011 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2011/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2111,7 +2117,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2012 ----
+# loop for extracting all links for 2012 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2012/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2133,7 +2139,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2013 ----
+# loop for extracting all links for 2013 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2013/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2155,7 +2161,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2014 ----
+# loop for extracting all links for 2014 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2014/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2177,7 +2183,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2015 ----
+# loop for extracting all links for 2015 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2015/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2199,7 +2205,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2016 ----
+# loop for extracting all links for 2016 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2016/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2221,7 +2227,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2017 ----
+# loop for extracting all links for 2017 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2017/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2243,7 +2249,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2018 ----
+# loop for extracting all links for 2018 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2018/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2265,7 +2271,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2019 ----
+# loop for extracting all links for 2019 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2019/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2287,7 +2293,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2020 ----
+# loop for extracting all links for 2020 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2020/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2309,7 +2315,7 @@ for(j in 6:length(linkys)){
   
 }
 
-# loop for extracting all links for 2021 ----
+# loop for extracting all links for 2021 ---- DONE
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2021/"
 pg <- read_html(url)
 linkys <- html_attr(html_nodes(pg, "a"), "href")
@@ -2330,6 +2336,512 @@ for(j in 6:length(linkys)){
   Sys.sleep(5)
   
 }
+
+
+# loop for extracting all links for 2022 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2022/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2022ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+#......................................................................
+#2011 jasper ----
+# build for loops for all months in 2010 in jasper ----
+# jan
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_jan" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2011 directory
+for (file_path in dat.dir) {
+  jan <- lapply(dat.dir, raster)
+  jan <- stack(jan)
+  jan <- rast(jan)
+  jan.crop <- cropjan_reproject <- terra::project(jan.crop, crs(jasper_shape), method = "near")(jan, jasper_shape, mask = TRUE)
+  
+  jan.crop.mean <- app(jan_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- jan.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011jan_scaled.rds")
+  JASPjan2011mean_scaled <- readRDS("../../rds/jasper_2011jan_scaled.rds")
+  plot(JASPjan2011mean_scaled)
+  
+}
+
+
+# feb
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_feb" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the feb2011 directory
+for (file_path in dat.dir) {
+  feb <- lapply(dat.dir, raster)
+  feb <- stack(feb)
+  feb <- rast(feb)
+  feb.crop <- crop(feb, jasper_shape, mask = TRUE)
+  feb_reproject <- terra::project(feb.crop, crs(jasper_shape), method = "near")
+  feb.crop.mean <- app(feb_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- feb.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011feb_scaled.rds")
+  JASPfeb2011mean_scaled <- readRDS("../../rds/jasper_2011feb_scaled.rds")
+  plot(JASPfeb2011mean_scaled)
+  
+}
+
+# mar
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_mar" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the mar2010 directory
+for (file_path in dat.dir) {
+  mar <- lapply(dat.dir, raster)
+  mar <- stack(mar)
+  mar <- rast(mar)
+  mar.crop <- crop(mar, jasper_shape, mask = TRUE)
+  mar_reproject <- terra::project(mar.crop, crs(jasper_shape), method = "near")
+  mar.crop.mean <- app(mar_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- mar.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011mar_scaled.rds")
+  JASPmar2011mean_scaled <- readRDS("../../rds/jasper_2011mar_scaled.rds")
+  plot(JASPmar2011mean_scaled)
+}
+
+# apr
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_apr" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the apr2011 directory
+for (file_path in dat.dir) {
+  apr <- lapply(dat.dir, raster)
+  apr <- stack(apr)
+  apr <- rast(apr)
+  apr.crop <- crop(apr, jasper_shape, mask = TRUE)
+  apr_reproject <- terra::project(apr.crop, crs(jasper_shape), method = "near")
+  apr.crop.mean <- app(apr_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- apr.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011apr_scaled.rds")
+  JASPapr2011mean_scaled <- readRDS("../../rds/jasper_2011apr_scaled.rds")
+  plot(JASPapr2011mean_scaled)
+}
+
+# may
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_may" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the may2011 directory
+for (file_path in dat.dir) {
+  may <- lapply(dat.dir, raster)
+  may <- stack(may)
+  may <- rast(may)
+  may.crop <- crop(may, jasper_shape, mask = TRUE)
+  may_reproject <- terra::project(may.crop, crs(jasper_shape), method = "near")
+  may.crop.mean <- app(may_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- feb.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011may_scaled.rds")
+  JASPmay2011mean_scaled <- readRDS("../../rds/jasper_2011may_scaled.rds")
+  plot(JASPmay2011mean_scaled)
+}
+
+# jun
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_jun" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the jun2011 directory
+for (file_path in dat.dir) {
+  jun <- lapply(dat.dir, raster)
+  jun <- stack(jun)
+  jun <- rast(jun)
+  jun.crop <- crop(jun, jasper_shape, mask = TRUE)
+  jun_reproject <- terra::project(jun.crop, crs(jasper_shape), method = "near")
+  jun.crop.mean <- app(jun_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- jun.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011jun_scaled.rds")
+  JASPjun2011mean_scaled <- readRDS("../../rds/jasper_2011jun_scaled.rds")
+  plot(JASPjun2011mean_scaled)
+}
+
+# jul
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_jul" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the jul2011 directory
+for (file_path in dat.dir) {
+  jul <- lapply(dat.dir, raster)
+  jul <- stack(jul)
+  jul <- rast(jul)
+  jul.crop <- crop(jul, jasper_shape, mask = TRUE)
+  jul_reproject <- terra::project(jul.crop, crs(jasper_shape), method = "near")
+  jul.crop.mean <- app(jul_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- jul.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011jul_scaled.rds")
+  JASPjul2011mean_scaled <- readRDS("../../rds/jasper_2011jul_scaled.rds")
+  plot(JASPjul2011mean_scaled)
+}
+
+# aug
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_aug" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the aug2011 directory
+for (file_path in dat.dir) {
+  aug <- lapply(dat.dir, raster)
+  aug <- stack(aug)
+  aug <- rast(aug)
+  aug.crop <- crop(aug, jasper_shape, mask = TRUE)
+  aug_reproject <- terra::project(aug.crop, crs(jasper_shape), method = "near")
+  aug.crop.mean <- app(aug_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- aug.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011aug_scaled.rds")
+  JASPaug2010mean_scaled <- readRDS("../../rds/jasper_2011aug_scaled.rds")
+  plot(JASPaug2011mean_scaled)
+}
+
+# sep
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_sep" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the sep2011 directory
+for (file_path in dat.dir) {
+  sep <- lapply(dat.dir, raster)
+  sep <- stack(sep)
+  sep <- rast(sep)
+  sep.crop <- crop(sep, jasper_shape, mask = TRUE)
+  sep_reproject <- terra::project(sep.crop, crs(jasper_shape), method = "near")
+  sep.crop.mean <- app(sep_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- sep.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011sep_scaled.rds")
+  JASPsep2011mean_scaled <- readRDS("../../rds/jasper_2011sep_scaled.rds")
+  plot(JASPsep2011mean_scaled)
+}
+
+# oct
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_oct" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the oct2011 directory
+for (file_path in dat.dir) {
+  oct <- lapply(dat.dir, raster)
+  oct <- stack(oct)
+  oct <- rast(oct)
+  oct.crop <- crop(oct, jasper_shape, mask = TRUE)
+  oct_reproject <- terra::project(oct.crop, crs(jasper_shape), method = "near")
+  oct.crop.mean <- app(oct_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- oct.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011oct_scaled.rds")
+  JASPoct2011mean_scaled <- readRDS("../../rds/jasper_2011oct_scaled.rds")
+  plot(JASPoct2011mean_scaled)
+}
+
+# nov
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_nov" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the nov2011 directory
+for (file_path in dat.dir) {
+  nov <- lapply(dat.dir, raster)
+  nov <- stack(nov)
+  nov <- rast(nov)
+  nov.crop <- crop(nov, jasper_shape, mask = TRUE)
+  nov_reproject <- terra::project(nov.crop, crs(jasper_shape), method = "near")
+  nov.crop.mean <- app(nov_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- nov.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011nov_scaled.rds")
+  JASPnov2011mean_scaled <- readRDS("../../rds/jasper_2011nov_scaled.rds")
+  plot(JASPnov2011mean_scaled)
+}
+
+# dec
+# Set the directory containing the nc files
+nc.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/2011_dec" 
+setwd(nc.dir)
+
+# List all files in the directory with the specified pattern
+dat.dir <- list.files(path = nc.dir, pattern = "*.nc", full.names = FALSE)
+
+# for loop for all the files in the dec2011 directory
+for (file_path in dat.dir) {
+  dec <- lapply(dat.dir, raster)
+  dec <- stack(dec)
+  dec <- rast(dec)
+  dec.crop <- crop(dec, jasper_shape, mask = TRUE)
+  dec_reproject <- terra::project(dec.crop, crs(jasper_shape), method = "near")
+  dec.crop.mean <- app(dec_reproject, mean, na.rm = TRUE)
+  mean_ndvi_scaled <- dec.crop.mean * 0.0001
+  saveRDS(mean_ndvi_scaled, file = "../../rds/jasper_2011dec_scaled.rds")
+  JASPdec2011mean_scaled <- readRDS("../../rds/jasper_2011dec_scaled.rds")
+  plot(JASPdec2011mean_scaled)
+}
+
+#.............................................................................
+# for loop trial ----
+# for loop for cropping parks ----
+
+
+# Set directory to folder containing all ndvi files (2010-2022) 
+nc.year_dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi"
+setwd(nc.year_dir)
+
+# Create a folder for the cropped NDVI files
+output_year_dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_2011_ndvi"
+if (!dir.exists(output_year_dir)) {
+  dir.create(output_year_dir)
+}
+
+# import JASP shapefile
+jasper_shape <- readRDS("../rds/jasper.rds")
+
+# List all month folders in the year directory
+month_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FALSE)
+
+# Loop through each month folder
+for (nc.dir in month_folders) {
+  # Extract month from the directory path
+  file_month <- tools::file_path_sans_ext(basename(nc.dir))
+  
+  # Create a folder for the current month in the output directory
+  output_month_dir <- file.path(output_year_dir, file_month)
+  if (!dir.exists(output_month_dir)) {
+    dir.create(output_month_dir)
+  }
+  
+  # Make a list of the files in the month directory
+  nc.files <- list.files(path = nc.dir, pattern = "*.nc", full.names = TRUE)
+  
+  # Loop through all the ndvi files for the current month
+  for (file in nc.files) {
+    
+    # make them rasters
+    ndvi_files <- lapply(nc.files, raster) 
+    
+    # stack the rasters
+    stack <- stack(ndvi_files) 
+    
+    # make the spatrasters
+    spat <- rast(stack)
+    
+    # crop and mask to JASP shapefile
+    c <- crop(spat, jasper_shape, mask = TRUE)
+    
+    # make it rasters
+    c_raster <- as(c, "Raster") #plot this, this works
+    
+    # save the output 
+    output_file <- file.path(output_month_dir, basename(file))
+    writeRaster(c_raster, filename = output_file, format = "GTiff", 
+    # options = c("COMPRESS=DEFLATE", "TFW=YES"), 
+                overwrite = TRUE)
+  }
+}
+
+
+file <- raster("../cropped_2011_ndvi/2011_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20110103_c20170407000513.tif")
+plot(file) # testing by rasterising and plot
+
+
+
+# ................................................................
+
+# for loop for taking mean ndvi ----
+
+# Set directory to folder containing all ndvi files (2010-2022)
+cropped_ndvi.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_2011_ndvi" 
+setwd(cropped_ndvi.dir)  # Corrected the directory setting
+
+# Create a folder for the cropped NDVI files
+output_mean.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_mean_ndvi"
+if (!dir.exists(output_mean.dir)) {
+  dir.create(output_mean.dir)
+}
+
+# List all month folders in the year directory
+month_folders <- list.dirs(path = cropped_ndvi.dir, full.names = TRUE, recursive = FALSE)
+
+# Loop through each month folder
+for (nc.dir in month_folders) {
+  # Extract month from the directory path
+  file_month <- tools::file_path_sans_ext(basename(nc.dir))
+  
+  # Create a folder for the current month in the output directory
+  output_month_dir <- file.path(output_mean.dir, file_month)
+  if (!dir.exists(output_month_dir)) {
+    dir.create(output_month_dir)
+  }
+  
+  # Make a list of the files in the month directory
+  nc.files <- list.files(path = nc.dir, pattern = "*.tif", full.names = TRUE)
+  
+  # Make them rasters
+  cropped_ndvi_files <- lapply(nc.files, raster) 
+  
+  # Initialize an empty raster stack to accumulate values for each file
+  raster_stack <- stack(cropped_ndvi_files)
+  
+  # Loop through all the ndvi files for the current month
+  for (file in nc.files) {
+    # Read the raster file
+    crop.raster <- raster(file)
+    
+    # Add the raster to the stack
+    raster_stack <- addLayer(raster_stack, crop.raster)
+  }
+  
+  # Take the mean of the month
+  crop.mean <- mean(raster_stack, na.rm = TRUE)
+  
+  # Save the output 
+  output_file <- file.path(output_month_dir, paste0(file_month, "_mean.tif"))  # Adjusted the output file name
+  writeRaster(crop.mean, filename = output_file, format = "GTiff", #options = c("COMPRESS=DEFLATE", "TFW=YES")
+              overwrite = TRUE)
+}
+
+file <- raster("../cropped_mean_ndvi/2011_apr/2011_apr_mean.tif")
+plot(file) # works!!
+
+# ............................................................................................
+
+# for loop for rescaling ----
+# Set directory to folder containing all ndvi files (2010-2022)
+mean_ndvi.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_mean_ndvi" 
+setwd (mean_ndvi.dir)
+
+# Create a folder for the cropped NDVI files
+output_rescaled.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/rescaled_mean_ndvi"
+if (!dir.exists(output_rescaled.dir)) {
+  dir.create(output_rescaled.dir)
+}
+
+# List all month folders in the year directory
+month_folders <- list.dirs(path = mean_ndvi.dir, full.names = TRUE, recursive = FALSE)
+
+# Loop through each month folder
+for (nc.dir in month_folders) {
+  # Extract month from the directory path
+  file_month <- tools::file_path_sans_ext(basename(nc.dir))
+  
+  # Create a folder for the current month in the output directory
+  output_month_dir <- file.path(output_mean.dir)
+  if (!dir.exists(output_mean.dir)) {
+    dir.create(output_mean.dir)
+  }
+  
+  # Make a list of the files in the month directory
+  nc.files <- list.files(path = nc.dir, pattern = "*.tif", full.names = TRUE)
+
+# Loop through all raster files
+for (file in nc.files) {
+  # Read the raster file
+  crop.raster <- raster(file)
+  
+  # turn it into a spatraster
+  crop.raster <- rast(crop.raster)
+  
+  # Reproject the raster to the CRS of jasper_shape
+  reprojected_raster <- terra::project(crop.raster, crs(jasper_shape), method = "near")
+  
+  # Rescale the rasters to right ndvi values
+  rescaled_mean <- reprojected_raster*0.0001
+  
+  # Save the reprojected raster
+  output_file <- file.path(output_rescaled.dir, basename(file))
+  writeRaster(rescaled_mean, filename = output_file, #format = "GTiff", 
+              #options = c("COMPRESS=DEFLATE", "TFW=YES"),
+              overwrite = TRUE)
+}
+}
+
+file <- raster("../rescaled_mean_ndvi/2011_apr_mean.tif")
+plot(file) # works!!
+
+# ..............................................................................................................................
+
+
+
+  
+
+
+
+
+# Get the list of files in the directory
+#ndvi_files <- list.files(pattern = "\\.tif$", full.names = TRUE)
+
+# Loop through each NDVI file
+#for (i in 1:length(ndvi_files)) {
+  # Read the NDVI raster
+ # rast <- terra::rast(ndvi_files[i])
+  
+  # Crop the raster using the JASP shapefile
+  #c <- crop(rast, jasper_shape)
+  #m <- mask(c, jasper_shape)
+  
+  # Save the cropped raster to the output folder
+  #output_file <- file.path(output_dir, basename(ndvi_files[i]))
+  #writeRaster(m, filename = output_file, format = "GTiff", overwrite = TRUE)
+#}
+
+
+
+
+
+
+
 
 
 
