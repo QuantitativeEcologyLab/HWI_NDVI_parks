@@ -16,11 +16,9 @@ library(grDevices) #for creating colour palette
 library(fBasics) #for creating colour palette
 library(mgcv) #gam
 library(terra) #shape file 
-library("xml2")
-library("rvest")
-library("dplyr")
-library("terra")
-library("raster")
+library(xml2)
+library(rvest)
+library(raster)
 
 # set working directory
 # setwd("C:/Users/grace/Documents/GitHub/HWI_parks")
@@ -120,7 +118,8 @@ canadashape <- st_as_sf(PROV) %>%
 park_coordinates <- read.csv("data/park_coordinates.csv")
 
 # convert coordinates into spatial data
-park_location <- SpatialPoints(select(park_coordinates, longitude, latitude))
+#park_location <- SpatialPoints(select(park_coordinates, longitude, latitude))
+park_location <- SpatialPoints(park_coordinates[, c("longitude", "latitude")])
 
 # plot parks
 plot(canadashape)
@@ -316,11 +315,11 @@ HWI_grouped_species$species <- as.factor(HWI_grouped_species$species)
 
 
 model1 <- gam(HWI ~
-              s(park, bs = "fs") +
+                s(park, bs = "fs") +
                 s(species, bs = "fs") +
-              #Add a random effect for species
-              ti(year, park, k = 12, bs = "fs") +
-              ti(month, park, k = 8, bs = "fs"), #Adjust for a random effect of park, done
+                #Add a random effect for species
+                ti(year, park, k = 12, bs = "fs") +
+                ti(month, park, k = 8, bs = "fs"), #Adjust for a random effect of park, done
               family = "poisson",
               data = HWI_grouped_species, method = "REML")
 
@@ -1429,6 +1428,7 @@ HWI_grouped_species$species[HWI_grouped_species$species %in% c("Wasp", "Ant", "E
 # importing shape files of Canadian national parks (visualisation only)----
 CAshape <- vect("data/CLAB_CA_2023-09-08/CLAB_CA_2023-09-08.shp")
 plot(CAshape)
+
 # my HWI data only has 31 parks (e.g. no NU but they are in this shape file)
 
 ABshape <- vect("data/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
@@ -1618,6 +1618,8 @@ saveRDS(nahanni,file ="rds/nahanni.rds")
 
 # no NU parks in my data
 
+#ON
+
 fathom_five <- ONpolygon[ONpolygon$CLAB_ID == "FIVE", ]
 plot(fathom_five)
 saveRDS(fathom_five,file ="rds/fathom_five.rds")
@@ -1695,14 +1697,14 @@ for(i in 1:length(linkys)){
 LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
-    url_path <- paste(url, linkys[j], sep = "")
-    path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/",linkys[j], sep="")
-    try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
-    
-    Sys.sleep(5)
-    
-  }
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
+  Sys.sleep(5)
+  
+}
+
 
 #test the files to see if they can plot ndvi [done]
 file1 <- "2010ndvi/2010_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc"
@@ -1716,16 +1718,16 @@ plot(NDVI$NDVI) # IT'S PLOTTING :DDDD
 # 2010ndvi----
 # make a dataframe
 # jan_2010ndvi <- unique(list.files(path = 'C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/', # file for jan 
-                             #pattern = ".nc", full.names = T))
+#pattern = ".nc", full.names = T))
 
 #jan2010ndvi <- list()
 
 #for(i in 1:length(jan_2010ndvi)){ 
-  #r <- terra::rast(jan_2010ndvi[i])
-  #c <- crop(r, parks_polygon) # crop to my polygon --> it's cropping the entire canada??
-  
-  #jan2010ndvi[[i]] <- c
-  
+#r <- terra::rast(jan_2010ndvi[i])
+#c <- crop(r, parks_polygon) # crop to my polygon --> it's cropping the entire canada??
+
+#jan2010ndvi[[i]] <- c
+
 #} #now they're all added onto the list 
 
 # my attempt to stacking and cropping ----
@@ -2634,66 +2636,137 @@ for (file_path in dat.dir) {
 # for loop trial ----
 # for loop for cropping parks ----
 
+# import all Canada parks 
+#CAshape <- st_read("data/CLAB_CA_2023-09-08/CLAB_CA_2023-09-08.shp")
 
-# Set directory to folder containing all ndvi files (2010-2022) 
+# subsetting the 25 parks I need 
+#test_parks <- CAshape$CLAB_ID %in% c("WATE", "ELKI", "JASP", "WOOD", "BANF", "YOHO", "KOOT", "REVE", "PRIM", "GLAC", "WAPU", "FUND", "KOUC", "NOVA", "KEJI", "AULA", "NAHA", "FIVE", "PELE", "GBIS", "THIS", "PEIS", "FORI", "PALB", "IVVA")
+
+# Subset the spatial dataset based on the condition
+#my_parks <- CAshape[test_parks, ]
+
+#test <- "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi/2011ndvi/2011_aug/AVHRR-Land_v005_AVH13C1_NOAA-19_20110802_c20170407082138.nc"
+
+
+# Set directory to folder containing all ndvi files (2010-2021) 
+# loop over all years in the directory 
+
 nc.year_dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi"
 setwd(nc.year_dir)
 
-# Create a folder for the cropped NDVI files
-output_year_dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_2011_ndvi"
-if (!dir.exists(output_year_dir)) {
-  dir.create(output_year_dir)
-}
+# import all of the boundaries for Canadian parks
+CAshape <- st_read("C:/Users/grace/Documents/GitHub/HWI_parks/data/CLAB_CA_2023-09-08")
+
+# Create a list of the names of the 25 parks to be studied 
+test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
+                "BANF", "YOHO", "KOOT", "REVE",
+                "PRIM", "GLAC", "WAPU", "FUND",
+                "KOUC", "NOVA", "KEJI", "AULA",
+                "NAHA", "FIVE", "PELE", "GBIS",
+                "THIS", "PEIS", "FORI", "PALB", "IVVA")
+
 
 # import JASP shapefile
 jasper_shape <- readRDS("../rds/jasper.rds")
 
-# List all month folders in the year directory
-month_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FALSE)
+# Define the CRS
+CRS_canada <- crs(jasper_shape)
 
-# Loop through each month folder
-for (nc.dir in month_folders) {
-  # Extract month from the directory path
-  file_month <- tools::file_path_sans_ext(basename(nc.dir))
-  
-  # Create a folder for the current month in the output directory
-  output_month_dir <- file.path(output_year_dir, file_month)
-  if (!dir.exists(output_month_dir)) {
-    dir.create(output_month_dir)
-  }
-  
-  # Make a list of the files in the month directory
-  nc.files <- list.files(path = nc.dir, pattern = "*.nc", full.names = TRUE)
-  
-  # Loop through all the ndvi files for the current month
-  for (file in nc.files) {
-    
-    # make them rasters
-    ndvi_files <- lapply(nc.files, raster) 
-    
-    # stack the rasters
-    stack <- stack(ndvi_files) 
-    
-    # make the spatrasters
-    spat <- rast(stack)
-    
-    # crop and mask to JASP shapefile
-    c <- crop(spat, jasper_shape, mask = TRUE)
-    
-    # make it rasters
-    c_raster <- as(c, "Raster") #plot this, this works
-    
-    # save the output 
-    output_file <- file.path(output_month_dir, basename(file))
-    writeRaster(c_raster, filename = output_file, format = "GTiff", 
-    # options = c("COMPRESS=DEFLATE", "TFW=YES"), 
-                overwrite = TRUE)
-  }
-}
+# List all year folders in the ndvi directory 
+year_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FALSE)
 
+RESULTS <- list()
 
-file <- raster("../cropped_2011_ndvi/2011_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20110103_c20170407000513.tif")
-plot(file) # testing by rasterising and plot
+# Loop through each year folder
+for (i in 1:length(i:2)) { #length(year_folders)
+  
+  year <- gsub(pattern = "ndvi",
+               replacement = "",
+               x = gsub(pattern = "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi/",
+                        replacement = "",
+                        x = year_folders[i]))
+  
+  # List all month folders in the year folder
+  month_folders <- list.dirs(path = year_folders[i],
+                             full.names = TRUE,
+                             recursive = FALSE)
+  
+  # Generate an empty list for storing daily results
+  res_month <- list()
+  
+  # Loop through each month folder
+  for (j in 1:length(month_folders)) {
+    
+    # Make a list of the files in the month directory
+    nc.files <- list.files(path = month_folders[j],
+                           pattern = "*.nc",
+                           full.names = TRUE)
+    
+    # Generate an empty list for storing daily results
+    res_day <- list()
+    
+    # Loop through all the ndvi files for the current month
+    for (k in 1:length(nc.files)) {
+      
+      
+      # make the spatrasters
+      spat <- rast(nc.files[k]) # took 2012 nov 2, 10, oct 9, 10/ 2018 nov 6 out to run this
+      spat <- spat[[which(names(spat) == "NDVI")]]
+      
+      # Reproject the raster to the CRS of jasper_shape
+      reprojected_spat <- terra::project(spat,
+                                         CRS_canada,
+                                         method = "near")
+      
+      # Generate an empty list for storing results
+      res <- list()
+      
+      #Loop over the vector of park names to extract the NDVI information
+      for(l in 1:length(test_parks)){
+        
+        #Extract the desired park contour
+        PARK <- CAshape[CAshape$CLAB_ID %in% test_parks[l],]
+        
+        # crop the NDVI raster to the park
+        cropped_spat <- crop(reprojected_spat, PARK, mask = TRUE) 
+        
+        # Get mean and variance in NDVI
+        NDVI <- mean(values(cropped_spat), na.rm = TRUE)
+        #NDVI_var <- var(cropped_spat)
+        NDVI_var <- var(values(cropped_spat), na.rm = TRUE)
+        
+        # Store as a data frame in the list
+        res[[l]] <- data.frame(park = test_parks[l],
+                               date = paste(year,j,k,sep = "_"),
+                               ndvi = NDVI,
+                               ndvi_var = NDVI_var)
+        
+      } #close the loop over parks
+      
+      #clean up the results over the days of the month
+      res_day[[k]] <- do.call(rbind,res) 
+      
+      
+    } #close of day loop
+    
+    #clean up the results over the months of the year
+    res_month[[j]] <- do.call(rbind,res_day) 
+    
+  } # close of the month loop
+  
+  #clean up the results over the months of the year
+  RESULTS[[i]] <- do.call(rbind,res_month) 
+} # close of year loop
+
+# convert the final list to a data frame
+RESULTS <- do.call(rbind,RESULTS) 
+
+#SAVE AS RDA OR CSV
+
+# close loop of all the years 
+
+#file <- raster("../cropped_2011_ndvi/2011_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20110103_c20170407000513.tif")
+#plot(file) # testing by rasterising and plot
 
 
 
@@ -2784,27 +2857,27 @@ for (nc.dir in month_folders) {
   
   # Make a list of the files in the month directory
   nc.files <- list.files(path = nc.dir, pattern = "*.tif", full.names = TRUE)
-
-# Loop through all raster files
-for (file in nc.files) {
-  # Read the raster file
-  crop.raster <- raster(file)
   
-  # turn it into a spatraster
-  crop.raster <- rast(crop.raster)
-  
-  # Reproject the raster to the CRS of jasper_shape
-  reprojected_raster <- terra::project(crop.raster, crs(jasper_shape), method = "near")
-  
-  # Rescale the rasters to right ndvi values
-  rescaled_mean <- reprojected_raster*0.0001
-  
-  # Save the reprojected raster
-  output_file <- file.path(output_rescaled.dir, basename(file))
-  writeRaster(rescaled_mean, filename = output_file, #format = "GTiff", 
-              #options = c("COMPRESS=DEFLATE", "TFW=YES"),
-              overwrite = TRUE)
-}
+  # Loop through all raster files
+  for (file in nc.files) {
+    # Read the raster file
+    crop.raster <- raster(file)
+    
+    # turn it into a spatraster
+    crop.raster <- rast(crop.raster)
+    
+    # Reproject the raster to the CRS of jasper_shape
+    reprojected_raster <- terra::project(crop.raster, crs(jasper_shape), method = "near")
+    
+    # Rescale the rasters to right ndvi values
+    rescaled_mean <- reprojected_raster*0.0001
+    
+    # Save the reprojected raster
+    output_file <- file.path(output_rescaled.dir, basename(file))
+    writeRaster(rescaled_mean, filename = output_file, #format = "GTiff", 
+                #options = c("COMPRESS=DEFLATE", "TFW=YES"),
+                overwrite = TRUE)
+  }
 }
 
 file <- raster("../rescaled_mean_ndvi/2011_apr_mean.tif")
@@ -2814,7 +2887,7 @@ plot(file) # works!!
 
 
 
-  
+
 
 
 
@@ -2824,16 +2897,16 @@ plot(file) # works!!
 
 # Loop through each NDVI file
 #for (i in 1:length(ndvi_files)) {
-  # Read the NDVI raster
- # rast <- terra::rast(ndvi_files[i])
-  
-  # Crop the raster using the JASP shapefile
-  #c <- crop(rast, jasper_shape)
-  #m <- mask(c, jasper_shape)
-  
-  # Save the cropped raster to the output folder
-  #output_file <- file.path(output_dir, basename(ndvi_files[i]))
-  #writeRaster(m, filename = output_file, format = "GTiff", overwrite = TRUE)
+# Read the NDVI raster
+# rast <- terra::rast(ndvi_files[i])
+
+# Crop the raster using the JASP shapefile
+#c <- crop(rast, jasper_shape)
+#m <- mask(c, jasper_shape)
+
+# Save the cropped raster to the output folder
+#output_file <- file.path(output_dir, basename(ndvi_files[i]))
+#writeRaster(m, filename = output_file, format = "GTiff", overwrite = TRUE)
 #}
 
 
@@ -2848,37 +2921,44 @@ plot(file) # works!!
 
 #ignore below ----
 
-# corrupt <- sapply(feb_2010ndvi,
- #                 function(filename) {
- #                   .r <- tryCatch(rast(filename),
-  #                                 error = function(e) return(as.character(e)))
-   #                 return(is.character(.r))
-    #              }) %>%
-#  suppressWarnings()
-#corrupt
-#corrupt <- corrupt[which(corrupt)] # only keep TRUE values
-#corrupt
 
-#while(any(corrupt)) {
-  # find file names
- # files <- substr(x = names(corrupt),
-  #                start = nchar("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/") + 1,
-   #               stop = nchar(names(corrupt)))
+
+
+
+
+
+corrupt <- sapply("2012ndvi",
+                  function(filename) {
+                    .r <- tryCatch(rast(filename),
+                                   error = function(e) return(as.character(e)))
+                    return(is.character(.r))
+                  }) %>%
+  suppressWarnings()
+corrupt
+corrupt <- corrupt[which(corrupt)] # only keep TRUE values
+corrupt
+
+while(any(corrupt)) {
+  #find file names
+  files <- substr(x = names(corrupt),
+                  start = nchar("C:/Users/grace/Documents/GitHub/HWI_parks/ndvi/2012ndvi/") + 1,
+                  stop = nchar(names(corrupt)))
   
- # years <- substr(files,
-                 # start = nchar(files) - nchar('yyyymmdd_cyyyymmddhhmmss.nc') + 1,
-                 # stop = nchar(files) - nchar('mmdd_cyyyymmddhhmmss.nc'))
-  
-  # re-download the corrupt NDVi rasters
-#  urls <- paste0('https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/',
-#                 files)
-  
-#  lapply(1:length(urls), function(.i){
-#    path <- paste0("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/", files[.i])
-#    try(download.file(urls[.i], destfile = path))
-#  })
-  
-  # check again what files are corrupt
+  years <- substr(files,
+                  start = nchar(files) - nchar('yyyymmdd_cyyyymmddhhmmss.nc') + 1,
+                  stop = nchar(files) - nchar('mmdd_cyyyymmddhhmmss.nc'))
+}
+
+re-download the corrupt NDVi rasters
+urls <- paste0('https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/',
+               files)
+
+lapply(1:length(urls), function(.i){
+  path <- paste0("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/2010_jan/", files[.i])
+  try(download.file(urls[.i], destfile = path))
+})
+
+# check again what files are corrupt
 #  corrupt <- sapply(names(corrupt),
 #                    function(filename) {
 #                      .r <- tryCatch(rast(filename),
@@ -2888,3 +2968,100 @@ plot(file) # works!!
 #    suppressWarnings()
 #  corrupt <- corrupt[which(corrupt)] # only keep TRUE values
 #}
+
+
+
+
+library("xml2")
+library("rvest")
+library("dplyr")
+library("terra")
+
+
+
+#extract all links for each year
+url_path <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/"
+pg <- read_html(url_path)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url_path, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+#extract links for each file in each year
+for(i in 6:length(LINKS)){
+  url <- LINKS[i]
+  pag <- read_html(url)
+  ndvi_links <- paste(LINKS[i], html_attr(html_nodes(pag, "a"), "href"),  sep = "")
+  filenames <- html_attr(html_nodes(pag, "a"), "href")
+  
+  for(j in 6:length(ndvi_links)){
+    url_path <- ndvi_links[j]
+    path <- paste("Canada/NDVI/NOAA_Files/",filenames[j], sep="")
+    try(download.file(url_path, destfile = path))
+    
+    Sys.sleep(5)
+  }
+  
+  Sys.sleep(5)
+}
+
+#test the files to see if they work
+file1 <- "Canada/NDVI/NOAA_Files/AVHRR-Land_v005_AVH13C1_NOAA-07_19810624_c20170610041337.nc"
+file2 <- "AVHRR-Land_v005_AVH13C1_NOAA-07_19810627_c20170610050500.nc"
+NDVI <- terra::rast(file2)
+plot(NDVI[[1]])
+
+# raster ----
+worldvi <- unique(list.files(path = '2012ndvi/2012_nov/', 
+                             pattern = ".nc", full.names = T))
+
+
+
+# corruption ----
+corrupt <- sapply(worldvi,
+                  function(filename) {
+                    .r <- tryCatch(rast(filename),
+                                   error = function(e) return(as.character(e)))
+                    return(is.character(.r))
+                  }) %>%
+  suppressWarnings()
+corrupt
+corrupt <- corrupt[which(corrupt)] # only keep TRUE values
+corrupt
+
+while(any(corrupt)) {
+  # find file names
+  files <- substr(x = names(corrupt),
+                  start = nchar('2012ndvi/2012_nov//') + 1,
+                  stop = nchar(names(corrupt)))
+  
+  years <- substr(files,
+                  start = nchar(files) - nchar('yyyymmdd_cyyyymmddhhmmss.nc') + 1,
+                  stop = nchar(files) - nchar('mmdd_cyyyymmddhhmmss.nc'))
+  
+  # re-download the corrupt NDVi rasters
+  urls <- paste0('https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2012/',
+                 years, '/', files)
+  
+  lapply(1:length(urls), function(.i){
+    path <- paste0("Canada/NDVI/NOAA_Files/", files[.i])
+    try(download.file(urls[.i], destfile = path))
+  })
+  
+  # check again what files are corrupt
+  corrupt <- sapply(names(corrupt),
+                    function(filename) {
+                      .r <- tryCatch(rast(filename),
+                                     error = function(e) return(as.character(e)))
+                      return(is.character(.r))
+                    }) %>%
+    suppressWarnings()
+  corrupt <- corrupt[which(corrupt)] # only keep TRUE values
+}
+
+
