@@ -2634,7 +2634,6 @@ for (file_path in dat.dir) {
 
 #.............................................................................
 # for loop trial ----
-# for loop for cropping parks ----
 
 # import all Canada parks 
 #CAshape <- st_read("data/CLAB_CA_2023-09-08/CLAB_CA_2023-09-08.shp")
@@ -2678,7 +2677,7 @@ year_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FAL
 RESULTS <- list()
 
 # Loop through each year folder
-for (i in 1:length(i:2)) { #length(year_folders)
+for (i in 1:length(year_folders)) { #length(year_folders)
   
   year <- gsub(pattern = "ndvi",
                replacement = "",
@@ -2758,10 +2757,13 @@ for (i in 1:length(i:2)) { #length(year_folders)
   RESULTS[[i]] <- do.call(rbind,res_month) 
 } # close of year loop
 
-# convert the final list to a data frame
+# convert the final list to a data frame (daily ndvi mean and var)
 RESULTS <- do.call(rbind,RESULTS) 
 
 #SAVE AS RDA OR CSV
+#save(RESULTS, file = "test.rda")
+write.csv(RESULTS, "C:/Users/grace/Documents/GitHub/HWI_parks/results/parksndvi.csv", row.names=FALSE)
+RESULTS_df <- read.csv("results/parksndvi.csv")
 
 # close loop of all the years 
 
@@ -2771,152 +2773,32 @@ RESULTS <- do.call(rbind,RESULTS)
 
 
 # ................................................................
+# results dataframe ---- 
 
-# for loop for taking mean ndvi ----
-
-# Set directory to folder containing all ndvi files (2010-2022)
-cropped_ndvi.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_2011_ndvi" 
-setwd(cropped_ndvi.dir)  # Corrected the directory setting
-
-# Create a folder for the cropped NDVI files
-output_mean.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_mean_ndvi"
-if (!dir.exists(output_mean.dir)) {
-  dir.create(output_mean.dir)
-}
-
-# List all month folders in the year directory
-month_folders <- list.dirs(path = cropped_ndvi.dir, full.names = TRUE, recursive = FALSE)
-
-# Loop through each month folder
-for (nc.dir in month_folders) {
-  # Extract month from the directory path
-  file_month <- tools::file_path_sans_ext(basename(nc.dir))
-  
-  # Create a folder for the current month in the output directory
-  output_month_dir <- file.path(output_mean.dir, file_month)
-  if (!dir.exists(output_month_dir)) {
-    dir.create(output_month_dir)
-  }
-  
-  # Make a list of the files in the month directory
-  nc.files <- list.files(path = nc.dir, pattern = "*.tif", full.names = TRUE)
-  
-  # Make them rasters
-  cropped_ndvi_files <- lapply(nc.files, raster) 
-  
-  # Initialize an empty raster stack to accumulate values for each file
-  raster_stack <- stack(cropped_ndvi_files)
-  
-  # Loop through all the ndvi files for the current month
-  for (file in nc.files) {
-    # Read the raster file
-    crop.raster <- raster(file)
-    
-    # Add the raster to the stack
-    raster_stack <- addLayer(raster_stack, crop.raster)
-  }
-  
-  # Take the mean of the month
-  crop.mean <- mean(raster_stack, na.rm = TRUE)
-  
-  # Save the output 
-  output_file <- file.path(output_month_dir, paste0(file_month, "_mean.tif"))  # Adjusted the output file name
-  writeRaster(crop.mean, filename = output_file, format = "GTiff", #options = c("COMPRESS=DEFLATE", "TFW=YES")
-              overwrite = TRUE)
-}
-
-file <- raster("../cropped_mean_ndvi/2011_apr/2011_apr_mean.tif")
-plot(file) # works!!
-
-# ............................................................................................
-
-# for loop for rescaling ----
-# Set directory to folder containing all ndvi files (2010-2022)
-mean_ndvi.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/cropped_mean_ndvi" 
-setwd (mean_ndvi.dir)
-
-# Create a folder for the cropped NDVI files
-output_rescaled.dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/rescaled_mean_ndvi"
-if (!dir.exists(output_rescaled.dir)) {
-  dir.create(output_rescaled.dir)
-}
-
-# List all month folders in the year directory
-month_folders <- list.dirs(path = mean_ndvi.dir, full.names = TRUE, recursive = FALSE)
-
-# Loop through each month folder
-for (nc.dir in month_folders) {
-  # Extract month from the directory path
-  file_month <- tools::file_path_sans_ext(basename(nc.dir))
-  
-  # Create a folder for the current month in the output directory
-  output_month_dir <- file.path(output_mean.dir)
-  if (!dir.exists(output_mean.dir)) {
-    dir.create(output_mean.dir)
-  }
-  
-  # Make a list of the files in the month directory
-  nc.files <- list.files(path = nc.dir, pattern = "*.tif", full.names = TRUE)
-  
-  # Loop through all raster files
-  for (file in nc.files) {
-    # Read the raster file
-    crop.raster <- raster(file)
-    
-    # turn it into a spatraster
-    crop.raster <- rast(crop.raster)
-    
-    # Reproject the raster to the CRS of jasper_shape
-    reprojected_raster <- terra::project(crop.raster, crs(jasper_shape), method = "near")
-    
-    # Rescale the rasters to right ndvi values
-    rescaled_mean <- reprojected_raster*0.0001
-    
-    # Save the reprojected raster
-    output_file <- file.path(output_rescaled.dir, basename(file))
-    writeRaster(rescaled_mean, filename = output_file, #format = "GTiff", 
-                #options = c("COMPRESS=DEFLATE", "TFW=YES"),
-                overwrite = TRUE)
-  }
-}
-
-file <- raster("../rescaled_mean_ndvi/2011_apr_mean.tif")
-plot(file) # works!!
-
-# ..............................................................................................................................
+#Create data frame by grouping park means according to months and years
 
 
+#convert to calendar dates
+RESULTS_df$date <- as.Date(RESULTS_df$date, format = "%Y_%m_%d")
 
+#extract year
+RESULTS_df$year <- lubridate::year(RESULTS_df$date)
 
+#extract month
+RESULTS_df$month <- lubridate::month(RESULTS_df$date)
 
+#rename columns
+names(RESULTS_df)[3] <- "ndvi_daily_mean"
+names(RESULTS_df)[4] <- "ndvi_daily_variance"
 
+# Create a new dataframe for analysis for mean monthly ndvi to be grouped by park and year
+data_ndvi_mean <- aggregate(ndvi_daily_mean ~ month + year + park, data = RESULTS_df, FUN = mean, na.rm = TRUE)
 
+#renmame columns
+names(data_ndvi_mean)[4] <- "ndvi_monthly_mean"
 
-# Get the list of files in the directory
-#ndvi_files <- list.files(pattern = "\\.tif$", full.names = TRUE)
-
-# Loop through each NDVI file
-#for (i in 1:length(ndvi_files)) {
-# Read the NDVI raster
-# rast <- terra::rast(ndvi_files[i])
-
-# Crop the raster using the JASP shapefile
-#c <- crop(rast, jasper_shape)
-#m <- mask(c, jasper_shape)
-
-# Save the cropped raster to the output folder
-#output_file <- file.path(output_dir, basename(ndvi_files[i]))
-#writeRaster(m, filename = output_file, format = "GTiff", overwrite = TRUE)
-#}
-
-
-
-
-
-
-
-
-
+# Create a new dataframe for analysis for mean ndvi to be grouped monthly and by park
+#data_ndvi_var <- aggregate(ndvi_variance ~ month + park, data = RESULTS_df, FUN = "length")
 
 
 #ignore below ----
