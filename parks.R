@@ -68,7 +68,7 @@ HWI_parks$park[HWI_parks$park == "Grasslands National Park of Canada"]<- "Grassl
 HWI_parks$park[HWI_parks$park == "Bruce Peninsula National Park of Canada"]<- "Bruce_Peninsula"
 HWI_parks$park[HWI_parks$park == "Yoho National Park of Canada"]<- "Yoho"
 HWI_parks$park[HWI_parks$park == "Terra Nova National Park of Canada"]<- "Terra_Nova"
-HWI_parks$park[HWI_parks$park == "Mount Revelstoke National Park of Canada"]<- "Mount_Revelstoke"
+HWI_parks$park[HWI_parks$park == "Mount Revelstoke National Park of Canada"]<- "Mount_Revelstoke" 
 HWI_parks$park[HWI_parks$park == "Elk Island National Park of Canada"]<- "Elk_Island"
 HWI_parks$park[HWI_parks$park == "Georgian Bay Islands National Park of Canada"]<- "Georgian_Bay_Islands"
 HWI_parks$park[HWI_parks$park == "Prince of Wales Fort National Historic Site of Canada"]<- "Prince_of_Wales_Fort"
@@ -105,6 +105,10 @@ HWI_parks <- HWI_parks[HWI_parks$species != "Unknown raptor",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown owl",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown sea lion",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown deer",]
+
+# save HWI_parks ----
+write.csv(HWI_parks, "C:/Users/grace/Documents/GitHub/HWI_parks/results/hwi_parks.csv", row.names=FALSE)
+HWI_parks <- read.csv("results/hwi_parks.csv")
 
 #Count number of incidents by park
 incident_count <- HWI_parks %>% 
@@ -319,7 +323,8 @@ model1 <- gam(HWI ~
                 s(species, bs = "fs") +
                 #Add a random effect for species
                 ti(year, park, k = 12, bs = "fs") +
-                ti(month, park, k = 8, bs = "fs"), #Adjust for a random effect of park, done
+                #Adjust for a random effect of park, done
+                ti(month, park, k = 8, bs = "fs"), 
               family = "poisson",
               data = HWI_grouped_species, method = "REML")
 
@@ -2709,7 +2714,7 @@ for (i in 1:length(year_folders)) { #length(year_folders)
       
       
       # make the spatrasters
-      spat <- rast(nc.files[k]) # took 2012 nov 2, 10, oct 9, 10/ 2018 nov 6 out to run this
+      spat <- rast(nc.files[k]) 
       spat <- spat[[which(names(spat) == "NDVI")]]
       
       # Reproject the raster to the CRS of jasper_shape
@@ -2770,10 +2775,12 @@ RESULTS_df <- read.csv("results/parksndvi.csv")
 #file <- raster("../cropped_2011_ndvi/2011_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20110103_c20170407000513.tif")
 #plot(file) # testing by rasterising and plot
 
+# 2000-2009 NDVI ----
+# in another script: 2000-2009_parks_ndvi in HWI 
 
 
 # ................................................................
-# results dataframe ---- 
+# results dataframe (2010-2021)---- 
 
 #Create data frame by grouping park means according to months and years
 
@@ -2791,15 +2798,381 @@ RESULTS_df$month <- lubridate::month(RESULTS_df$date)
 names(RESULTS_df)[3] <- "ndvi_daily_mean"
 names(RESULTS_df)[4] <- "ndvi_daily_variance"
 
-# Create a new dataframe for analysis for mean monthly ndvi to be grouped by park and year
+# Create a new dataframe for analysis for monthly ndvi mean to be grouped by park and year
 data_ndvi_mean <- aggregate(ndvi_daily_mean ~ month + year + park, data = RESULTS_df, FUN = mean, na.rm = TRUE)
 
-#renmame columns
+#rename columns
 names(data_ndvi_mean)[4] <- "ndvi_monthly_mean"
 
-# Create a new dataframe for analysis for mean ndvi to be grouped monthly and by park
-#data_ndvi_var <- aggregate(ndvi_variance ~ month + park, data = RESULTS_df, FUN = "length")
+#save datafram as a csv
+write.csv(data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_parks/results/monthly_mean_ndvi.csv", row.names=FALSE)
+mean_ndvi_df <- read.csv("results/monthly_mean_ndvi.csv")
 
+# Create a new dataframe for analysis for monthly ndvi variance to be grouped by park and year
+# data_ndvi_var <- aggregate(ndvi_daily_variance ~ month + year + park, data = RESULTS_df, FUN = mean, na.rm = TRUE)
+# 
+# #rename columns
+# names(data_ndvi_var)[4] <- "ndvi_monthly_var"
+
+# did the same for 2000-2009 NDVI data (separate script - 2000-200_parks_ndvi) ----
+
+
+# NDVI & parks GAM! ----
+
+# rescale ndvi in dataframe
+mean_ndvi_df <- mean_ndvi_df %>% 
+  mutate((ndvi_monthly_mean+1)/2)
+
+# rename columns 
+names(mean_ndvi_df)[5] <- "scaled_mean_ndvi"
+
+# change month and year to numeric
+as.numeric(mean_ndvi_df$month)
+as.numeric(mean_ndvi_df$year)
+
+# GAM
+test <-
+  gam(
+    scaled_mean_ndvi ~ #scale ndvi from 0 to 1 to fit beta distribution
+      # fixed effects
+      park +
+      # global smooths
+      s(month, bs = "cc", k = 4) + #month effect
+      s(year, k = 8) + #year effect
+      ti(month, year, k = 6), #month/ year interaction
+      family = "betar",
+    #beta location scale distribution for the data
+    data = mean_ndvi_df,
+    method = 'fREML'
+  )
+
+
+summary(test)
+plot(test, pages = 1)
+
+# residuals of model 1
+residuals(test)
+
+# add the residuals as a new column into the HWI_grouped_species dataframe ----
+mean_ndvi_df$residuals <- residuals(test)
+
+# looking at the distribution of the residuals 
+hist(mean_ndvi_df$residuals)
+
+# did the same thing for all years in 2000-2021 on separate script ----
+
+# matching park IDs ----
+HWI_parks$park[HWI_parks$park == "Banff"]<- "BANF"
+HWI_parks$park[HWI_parks$park == "Pacific_Rim"]<- "PRIM"
+HWI_parks$park[HWI_parks$park == "Waterton_Lakes"]<- "WATE"
+HWI_parks$park[HWI_parks$park == "Kejimkujik"]<- "KEJI"
+HWI_parks$park[HWI_parks$park == "Jasper"]<- "JASP"
+HWI_parks$park[HWI_parks$park == "Forillon"]<- "FORI"
+HWI_parks$park[HWI_parks$park == "Prince_Albert"]<- "PALB"
+HWI_parks$park[HWI_parks$park == "Kootenay"]<- "KOOT"
+HWI_parks$park[HWI_parks$park == "Glacier"]<- "GLAC"
+HWI_parks$park[HWI_parks$park == "Wapusk"]<- "WAPU"
+#HWI_parks$park[HWI_parks$park == "Grasslands"]<- "Grasslands"
+#HWI_parks$park[HWI_parks$park == "Bruce_Peninsula"]<- "Bruce_Peninsula"
+HWI_parks$park[HWI_parks$park == "Yoho"]<- "YOHO"
+HWI_parks$park[HWI_parks$park == "Terra_Nova"]<- "NOVA"
+HWI_parks$park[HWI_parks$park == "Mount_Revelstoke"]<- "REVE"
+HWI_parks$park[HWI_parks$park == "Elk_Island"]<- "ELKI"
+HWI_parks$park[HWI_parks$park == "Georgian_Bay_Islands"]<- "GBIS"
+#HWI_parks$park[HWI_parks$park == "Prince_of_Wales_Fort"]<- "Prince_of_Wales_Fort"
+HWI_parks$park[HWI_parks$park == "Point_Pelee"]<- "PELE"
+HWI_parks$park[HWI_parks$park == "Thousand_Islands"]<- "THIS"
+HWI_parks$park[HWI_parks$park == "Wood_Buffalo"]<- "WOOD"
+HWI_parks$park[HWI_parks$park == "Prince_Edward_Island"]<- "PEIS"
+HWI_parks$park[HWI_parks$park == "Ivvavik"]<- "IVVA"
+HWI_parks$park[HWI_parks$park == "Kouchibouguac"]<- "KOUC"
+#HWI_parks$park[HWI_parks$park == "Grizzly_Bear_Mountain"]<- "Grizzly_Bear_Mountain"
+HWI_parks$park[HWI_parks$park == "Fundy"]<- "FUND"
+HWI_parks$park[HWI_parks$park == "Nahanni"]<- "NAHA"
+HWI_parks$park[HWI_parks$park == "Aulavik"]<- "AULA"
+#HWI_parks$park[HWI_parks$park == "Sable_Island"]<- "Sable_Island"
+HWI_parks$park[HWI_parks$park == "Fathom_Five"]<- "FIVE"
+#HWI_parks$park[HWI_parks$park == "Fort_Walsh"]<- "Fort_Walsh"
+
+# drop parks without polygons ----
+HWI_dropped <- subset(HWI_parks, park %in% c("WATE", "ELKI", "JASP", "WOOD",
+                                       "BANF", "YOHO", "KOOT", "REVE",
+                                       "PRIM", "GLAC", "WAPU", "FUND",
+                                       "KOUC", "NOVA", "KEJI", "AULA",
+                                       "NAHA", "FIVE", "PELE", "GBIS",
+                                       "THIS", "PEIS", "FORI", "PALB", "IVVA"))
+
+# merging HWI and NDVI dataframes
+HWI_NDVI <- merge(mean_ndvi_df, HWI_dropped)
+
+# new data frame with aggregate by HWI number 
+hwi_ndvi <- aggregate(HWI ~ month + year + year_month+ park + ndvi_monthly_mean + scaled_mean_ndvi + residuals, data = HWI_NDVI, FUN = "length")
+
+#plot the trend of residuals by year_month ----
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = hwi_ndvi, aes(x = year_month, y = residuals, col = park)) +
+  xlab("Year_Month") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "none",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+
+# plot HWI with NDVI residuals ----
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park)) +
+  geom_smooth(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park),method = "lm") +
+  xlab("Residuals") +
+  ylab("HWI") +
+  scale_y_log10() +
+  theme_bw() +
+  geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+library(lme4)
+library(glmmTMB)
+glmmTMB(HWI + 1 ~ residuals + (1|park), family = Gamma(link = "log"), data = hwi_ndvi)
+
+
+# new map ----
+
+# import coordinates of all national parks, coordinates obtained from Google Maps
+park_coordinates <- read.csv("data/park_coordinates.csv")
+
+# remove the dropped parks x5
+parks_to_drop <- c("Grasslands National Park of Canada", "Bruce Peninsula National Park of Canada", "Prince of Wales Fort National Historic Site of Canada", "Saoy\\xfa-?ehdacho National Historic Site of Canada", "Sable Island National Park Reserve", "Fort Walsh National Historic Site of Canada")
+
+new_park_coordinates <- subset(park_coordinates, !(park %in% parks_to_drop))
+
+# match coordinates name to park ID
+new_park_coordinates$park[new_park_coordinates$park == "Banff National Park of Canada"]<- "BANF"
+new_park_coordinates$park[new_park_coordinates$park == "Pacific Rim National Park Reserve of Canada"]<- "PRIM"
+new_park_coordinates$park[new_park_coordinates$park == "Waterton Lakes National Park of Canada"]<- "WATE"
+new_park_coordinates$park[new_park_coordinates$park == "Kejimkujik National Park and National Historic Site of Canada"]<- "KEJI"
+new_park_coordinates$park[new_park_coordinates$park == "Jasper National Park of Canada"]<- "JASP"
+new_park_coordinates$park[new_park_coordinates$park == "Forillon National Park of Canada"]<- "FORI"
+new_park_coordinates$park[new_park_coordinates$park == "Prince Albert National Park of Canada"]<- "PALB"
+new_park_coordinates$park[new_park_coordinates$park == "Kootenay National Park of Canada"]<- "KOOT"
+new_park_coordinates$park[new_park_coordinates$park == "Glacier National Park of Canada"]<- "GLAC"
+new_park_coordinates$park[new_park_coordinates$park == "Wapusk National Park of Canada"]<- "WAPU"
+new_park_coordinates$park[new_park_coordinates$park == "Yoho National Park of Canada"]<- "YOHO"
+new_park_coordinates$park[new_park_coordinates$park == "Terra Nova National Park of Canada"]<- "NOVA"
+new_park_coordinates$park[new_park_coordinates$park == "Mount Revelstoke National Park of Canada"]<- "REVE"
+new_park_coordinates$park[new_park_coordinates$park == "Elk Island National Park of Canada"]<- "ELKI"
+new_park_coordinates$park[new_park_coordinates$park == "Georgian Bay Islands National Park of Canada"]<- "GBIS"
+new_park_coordinates$park[new_park_coordinates$park == "Point Pelee National Park of Canada"]<- "PELE"
+new_park_coordinates$park[new_park_coordinates$park == "Thousand Islands National Park of Canada"]<- "THIS"
+new_park_coordinates$park[new_park_coordinates$park == "Wood Buffalo National Park of Canada"]<- "WOOD"
+new_park_coordinates$park[new_park_coordinates$park == "Prince Edward Island National Park of Canada"]<- "PEIS"
+new_park_coordinates$park[new_park_coordinates$park == "Ivvavik National Park of Canada"]<- "IVVA"
+new_park_coordinates$park[new_park_coordinates$park == "Kouchibouguac National Park of Canada"]<- "KOUC"
+new_park_coordinates$park[new_park_coordinates$park == "Fundy National Park of Canada"]<- "FUND"
+new_park_coordinates$park[new_park_coordinates$park == "Nahanni National Park Reserve of Canada"]<- "NAHA"
+new_park_coordinates$park[new_park_coordinates$park == "Aulavik National Park of Canada"]<- "AULA"
+new_park_coordinates$park[new_park_coordinates$park == "Fathom Five National Marine Park of Canada"]<- "FIVE"
+
+
+# convert coordinates into spatial data
+#park_location <- SpatialPoints(select(park_coordinates, longitude, latitude))
+new_park_location <- SpatialPoints(new_park_coordinates[, c("longitude", "latitude")])
+
+
+# Canada and US map ----
+
+library(geodata)
+#level 0 = country; level 1 = province/state; level 2 = counties
+provinces <- gadm(country="Canada", level=1, path = tempdir())
+states <- gadm(country="USA", level=1, path = tempdir())
+
+#plot both shape files, layered
+plot(provinces)
+plot(states, add = TRUE)
+
+#https://stackoverflow.com/questions/10763421/r-creating-a-map-of-selected-canadian-provinces-and-u-s-states
+
+# OR
+#https://plantarum.ca/2023/02/13/terra-maps/
+
+CanUS <- rbind(states, provinces)
+plot(CanUS, xlim = c(-180, -50), border = "darkgrey", col = "lightgrey")
+# plot(CanUS[CanUS$NAME_1 %in% "British Columbia", ], border="black", 
+#     col="white", add=TRUE)
+
+
+# import ndvi file
+ndvi_bg <- "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi/2021ndvi/2021_dec/VIIRS-Land_v001-preliminary_NPP13C1_S-NPP_20211231_c20220419212252.nc"
+ndvi_bg <- terra::rast(ndvi_bg)
+plot(ndvi_bg$NDVI)
+
+# reproject NDVI to CanUS crs
+reprojected_bg <- terra::project(ndvi_bg,
+                                   CanUS,
+                                   method = "near")
+
+#crop reprojected ndvi bg to CanUS shape
+cropped_CanUS_ndvi <- crop(reprojected_bg, CanUS, mask = TRUE) 
+saveRDS(cropped_CanUS_ndvi,file ="rds/CanUS_ndvi.rds")
+CanUS_bg <- cropped_CanUS_ndvi$NDVI
+saveRDS(CanUS_bg,file ="rds/CanUSmap.rds")
+
+
+#find the extent of the raster
+ext(CanUS_bg)
+
+#set the bounding box
+bbox <- ext(c(-179.150558, -50, 20, 83.1104200000001))
+
+#crop the ndvi
+bg_crop <- crop(CanUS_bg, bbox)
+
+plot(bg_crop)
+
+#crop the map
+CanUS_crop <- crop(CanUS, bbox)
+
+plot(CanUS_crop)
+
+
+# Define manual color scale due to adding national parks
+manual_colors <- c("WATE"= "#560133", "ELKI" = "#790149", "JASP" = "#9F0162", "WOOD" = "#C7007C",
+                   "BANF" = "#EF0096", "YOHO" = "#FF5AAF", "KOOT" = "#FF9DCB", "REVE" = "#FFCFF2",
+                   "PRIM" = "#450270", "GLAC" = "#65019F", "WAPU" = "#8400CD", "FUND" = "#A700FC",
+                   "KOUC" = "#DA00FD", "NOVA" = "#FF3CFE", "KEJI" = "#FF92FD", "AULA" = "#FFCCFE",
+                   "NAHA" = "#5A000F", "FIVE" = "#7E0018", "PELE" = "#A40122", "GBIS" = "#CD022D",
+                   "THIS" = "#F60239", "PEIS" = "#FF6E3A", "FORI" = "#FFAC3B", "PALB" = "#FFDC3D", "IVVA" = "#FF4C30")
+
+
+# Plotting the map [not done]
+
+CanUS_sf <- st_as_sf(CanUS)
+
+ggplot() +
+  #ggtitle("A")+
+  geom_spatraster(data = bg_crop) + #ndvi bg
+  geom_sf(data = CanUS_crop, fill = "transparent", color = "black", size = 1) + #map
+  geom_point(data = new_park_coordinates, aes(x = longitude, y = latitude, col = park, shape = park), 
+             size = 3, alpha = 0.8) +
+  guides(col = guide_legend(override.aes = list(alpha=0.8,
+        shape = rep(19,25))),
+        shape = "none", alpha = "none") +
+  scale_colour_manual(name="Region",
+                      values = manual_colors) +
+                      # labels=c("WATE", "ELKI", "JASP", "WOOD",
+                      #          "BANF", "YOHO", "KOOT", "REVE",
+                      #          "PRIM", "GLAC", "WAPU", "FUND",
+                      #          "KOUC", "NOVA", "KEJI", "AULA",
+                      #          "NAHA", "FIVE", "PELE", "GBIS",
+                      #          "THIS", "PEIS", "FORI", "PALB", "IVVA")) +
+  scale_shape_manual(values = rep(19,25)) +
+  #scale_alpha_manual(values = c(0.8,0.6)) +
+  theme(legend.title = element_text(size = 11, face = "bold"),
+        legend.text = element_text(size = 11),
+        legend.position = "right",
+        legend.justification = "center",
+        legend.direction = "vertical",
+        legend.box.background = element_rect(color = "black"),
+        plot.margin = unit(c(-1,0,-1,0), "cm"),
+        plot.title = element_text(vjust = -8.5, hjust = 0.03,
+                                  size = 30, family = "sans", face = "bold")) +
+  coord_sf() # ensures points don't get jittered around when figure dimensions change
+
+# tweedie -----------------------------
+
+library(mgcv)
+
+test2 <- gam(scaled_mean_ndvi ~
+               # fixed effects
+               park +
+               # global terms
+               # global smooths
+               s(month, bs = "cc", k = 4) + #month effect
+               s(year, k = 8) + #year effect
+               ti(month, year, k = 6), #month/ year interaction
+               # study-level terms
+               #s(Study, bs = 're'), #random int - it doesn't really have random slopes 
+             #weights = Weights,
+             family = tw(link = 'log'),
+             data = mean_ndvi_df,
+             method = "REML")
+
+summary(test2)
+plot(test2, pages = 1)
+
+# residuals of model 
+residuals(test2)
+
+# add the residuals as a new column into the mean_ndvi_df dataframe ----
+mean_ndvi_df$tweedie_residuals <- residuals(test2)
+
+# merging HWI and NDVI dataframes
+HWI_NDVI <- merge(mean_ndvi_df, HWI_dropped)
+
+# new data frame with aggregate by HWI number 
+new_hwi_ndvi <- aggregate(HWI ~ month + year + year_month+ park + ndvi_monthly_mean + scaled_mean_ndvi + tweedie_residuals, data = HWI_NDVI, FUN = "length")
+
+
+# plot HWI with tweedie NDVI residuals ----
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = new_hwi_ndvi, aes(x = tweedie_residuals, y = HWI, col = park)) +
+  geom_smooth(data = new_hwi_ndvi, aes(x = tweedie_residuals, y = HWI, col = park),method = "lm") +
+  xlab("Tweedie Residuals") +
+  ylab("HWI") +
+  scale_y_log10() +
+  scale_colour_manual(name="Region",
+                      values = manual_colors) +
+  theme_bw() +
+  geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# test <-
+#   gam(
+#     scaled_mean_ndvi ~ #scale ndvi from 0 to 1 to fit beta distribution
+#       # fixed effects
+#       park +
+#       # global smooths
+#       s(month, bs = "cc", k = 4) + #month effect
+#       s(year, k = 8) + #year effect
+#       ti(month, year, k = 6), #month/ year interaction
+#     family = "betar",
+#     #beta location scale distribution for the data
+#     data = mean_ndvi_df,
+#     method = 'fREML'
+#   )
 
 #ignore below ----
 
