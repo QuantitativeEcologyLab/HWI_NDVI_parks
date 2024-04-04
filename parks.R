@@ -2840,7 +2840,7 @@ test <-
       s(month, bs = "cc", k = 4) + #month effect
       s(year, k = 8) + #year effect
       ti(month, year, k = 6), #month/ year interaction
-      family = "betar",
+    family = "betar",
     #beta location scale distribution for the data
     data = mean_ndvi_df,
     method = 'fREML'
@@ -2896,17 +2896,20 @@ HWI_parks$park[HWI_parks$park == "Fathom_Five"]<- "FIVE"
 
 # drop parks without polygons ----
 HWI_dropped <- subset(HWI_parks, park %in% c("WATE", "ELKI", "JASP", "WOOD",
-                                       "BANF", "YOHO", "KOOT", "REVE",
-                                       "PRIM", "GLAC", "WAPU", "FUND",
-                                       "KOUC", "NOVA", "KEJI", "AULA",
-                                       "NAHA", "FIVE", "PELE", "GBIS",
-                                       "THIS", "PEIS", "FORI", "PALB", "IVVA"))
+                                             "BANF", "YOHO", "KOOT", "REVE",
+                                             "PRIM", "GLAC", "WAPU", "FUND",
+                                             "KOUC", "NOVA", "KEJI", "AULA",
+                                             "NAHA", "FIVE", "PELE", "GBIS",
+                                             "THIS", "PEIS", "FORI", "PALB", "IVVA"))
 
-# merging HWI and NDVI dataframes
-HWI_NDVI <- merge(mean_ndvi_df, HWI_dropped)
+# merging HWI and NDVI 2000-2021 dataframes ----
+HWI_NDVI <- merge(all_ndvi, HWI_dropped, by = c("park", "month", "year"))
 
 # new data frame with aggregate by HWI number 
-hwi_ndvi <- aggregate(HWI ~ month + year + year_month+ park + ndvi_monthly_mean + scaled_mean_ndvi + residuals, data = HWI_NDVI, FUN = "length")
+hwi_ndvi <- aggregate(HWI ~ month + year + park + ndvi_monthly_mean + scaled_mean_ndvi + residuals, data = HWI_NDVI, FUN = "length")
+
+# creating a year_month column
+hwi_ndvi$year_month <- paste(hwi_ndvi$year, hwi_ndvi$month, sep = "-")
 
 #plot the trend of residuals by year_month ----
 ggplot() +
@@ -2933,10 +2936,12 @@ ggplot() +
 ggplot() +
   geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
   geom_point(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park)) +
-  geom_smooth(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park),method = "lm") +
+  #geom_smooth(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park),method = "lm") +
   xlab("Residuals") +
   ylab("HWI") +
   scale_y_log10() +
+  scale_colour_manual(name="Region",
+                      values = manual_colors) +
   theme_bw() +
   geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
   theme(panel.grid.major = element_blank(),
@@ -2954,7 +2959,9 @@ ggplot() +
 
 library(lme4)
 library(glmmTMB)
-glmmTMB(HWI + 1 ~ residuals + (1|park), family = Gamma(link = "log"), data = hwi_ndvi)
+
+# model for HWI as a function of residuals ----
+fit <- glmmTMB(HWI + 1 ~ residuals + (1|park), family = Gamma(link = "log"), data = hwi_ndvi)
 
 
 # new map ----
@@ -3029,8 +3036,8 @@ plot(ndvi_bg$NDVI)
 
 # reproject NDVI to CanUS crs
 reprojected_bg <- terra::project(ndvi_bg,
-                                   CanUS,
-                                   method = "near")
+                                 CanUS,
+                                 method = "near")
 
 #crop reprojected ndvi bg to CanUS shape
 cropped_CanUS_ndvi <- crop(reprojected_bg, CanUS, mask = TRUE) 
@@ -3076,16 +3083,16 @@ ggplot() +
   geom_point(data = new_park_coordinates, aes(x = longitude, y = latitude, col = park, shape = park), 
              size = 3, alpha = 0.8) +
   guides(col = guide_legend(override.aes = list(alpha=0.8,
-        shape = rep(19,25))),
-        shape = "none", alpha = "none") +
+                                                shape = rep(19,25))),
+         shape = "none", alpha = "none") +
   scale_colour_manual(name="Region",
                       values = manual_colors) +
-                      # labels=c("WATE", "ELKI", "JASP", "WOOD",
-                      #          "BANF", "YOHO", "KOOT", "REVE",
-                      #          "PRIM", "GLAC", "WAPU", "FUND",
-                      #          "KOUC", "NOVA", "KEJI", "AULA",
-                      #          "NAHA", "FIVE", "PELE", "GBIS",
-                      #          "THIS", "PEIS", "FORI", "PALB", "IVVA")) +
+  # labels=c("WATE", "ELKI", "JASP", "WOOD",
+  #          "BANF", "YOHO", "KOOT", "REVE",
+  #          "PRIM", "GLAC", "WAPU", "FUND",
+  #          "KOUC", "NOVA", "KEJI", "AULA",
+  #          "NAHA", "FIVE", "PELE", "GBIS",
+  #          "THIS", "PEIS", "FORI", "PALB", "IVVA")) +
   scale_shape_manual(values = rep(19,25)) +
   #scale_alpha_manual(values = c(0.8,0.6)) +
   theme(legend.title = element_text(size = 11, face = "bold"),
@@ -3099,65 +3106,90 @@ ggplot() +
                                   size = 30, family = "sans", face = "bold")) +
   coord_sf() # ensures points don't get jittered around when figure dimensions change
 
-# tweedie -----------------------------
+# gam for HWI and residuals -----------------------------
 
 library(mgcv)
+hwi_ndvi$park <- as.factor(hwi_ndvi$park)
 
-test2 <- gam(scaled_mean_ndvi ~
-               # fixed effects
-               park +
-               # global terms
+test2 <- gam(HWI ~
                # global smooths
-               s(month, bs = "cc", k = 4) + #month effect
-               s(year, k = 8) + #year effect
-               ti(month, year, k = 6), #month/ year interaction
-               # study-level terms
-               #s(Study, bs = 're'), #random int - it doesn't really have random slopes 
+               s(residuals, park, bs = "fs", k = 6), #month effect
              #weights = Weights,
-             family = tw(link = 'log'),
-             data = mean_ndvi_df,
+             family = nb(link = 'log'),
+             data = hwi_ndvi,
              method = "REML")
 
 summary(test2)
 plot(test2, pages = 1)
 
-# residuals of model 
-residuals(test2)
+# plot the HWI predictions for one park: example is BANFF ----
+# seq -2 to 2 is the x-axis range, 0.01 is distance between data points
+testt <- predict(test2, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                             
+                                             park = "BANF"),
+                 type = "response", # to see how HWI responds to NDVI residuals
+                 se = TRUE # standard error = true --> for looking at confidence interval
+)
 
-# add the residuals as a new column into the mean_ndvi_df dataframe ----
-mean_ndvi_df$tweedie_residuals <- residuals(test2)
+# plot the line for the park 
+plot(y = testt$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = testt$fit + 1.96*testt$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = testt$fit - 1.96*testt$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "BANF"),])
 
-# merging HWI and NDVI dataframes
-HWI_NDVI <- merge(mean_ndvi_df, HWI_dropped)
-
-# new data frame with aggregate by HWI number 
-new_hwi_ndvi <- aggregate(HWI ~ month + year + year_month+ park + ndvi_monthly_mean + scaled_mean_ndvi + tweedie_residuals, data = HWI_NDVI, FUN = "length")
 
 
-# plot HWI with tweedie NDVI residuals ----
-ggplot() +
-  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
-  geom_point(data = new_hwi_ndvi, aes(x = tweedie_residuals, y = HWI, col = park)) +
-  geom_smooth(data = new_hwi_ndvi, aes(x = tweedie_residuals, y = HWI, col = park),method = "lm") +
-  xlab("Tweedie Residuals") +
-  ylab("HWI") +
-  scale_y_log10() +
-  scale_colour_manual(name="Region",
-                      values = manual_colors) +
-  theme_bw() +
-  geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
-        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
-        axis.text.y = element_text(size=10, family = "sans"),
-        axis.text.x  = element_text(size=10, family = "sans"),
-        legend.position = "right",
-        legend.title = element_text(face = "bold"),
-        legend.background = element_blank(),
-        panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+
+
+
+
+
+
+
+
+
+
+# # residuals of model 
+# residuals(test2)
+# 
+# # add the residuals as a new column into the mean_ndvi_df dataframe ----
+# mean_ndvi_df$tweedie_residuals <- residuals(test2)
+# 
+# # merging HWI and NDVI dataframes
+# HWI_NDVI <- merge(mean_ndvi_df, HWI_dropped)
+# 
+# # new data frame with aggregate by HWI number 
+# new_hwi_ndvi <- aggregate(HWI ~ month + year + year_month+ park + ndvi_monthly_mean + scaled_mean_ndvi + tweedie_residuals, data = HWI_NDVI, FUN = "length")
+# 
+# 
+# # plot HWI with tweedie NDVI residuals ----
+# ggplot() +
+#   geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+#   geom_point(data = new_hwi_ndvi, aes(x = tweedie_residuals, y = HWI, col = park)) +
+#   geom_smooth(data = new_hwi_ndvi, aes(x = tweedie_residuals, y = HWI, col = park),method = "lm") +
+#   xlab("Tweedie Residuals") +
+#   ylab("HWI") +
+#   scale_y_log10() +
+#   scale_colour_manual(name="Region",
+#                       values = manual_colors) +
+#   theme_bw() +
+#   geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
+#   theme(panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+#         axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+#         axis.text.y = element_text(size=10, family = "sans"),
+#         axis.text.x  = element_text(size=10, family = "sans"),
+#         legend.position = "right",
+#         legend.title = element_text(face = "bold"),
+#         legend.background = element_blank(),
+#         panel.background = element_rect(fill = "transparent"),
+#         plot.background = element_rect(fill = "transparent", color = NA),
+#         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 # test <-
 #   gam(

@@ -179,9 +179,9 @@ all_ndvi_gam <-
       # fixed effects
       park +
       # global smooths
-      s(month, bs = "cc", k = 4) + #month effect
-      s(year, k = 8) + #year effect
-      ti(month, year, k = 6), #month/ year interaction
+      s(month, bs = "cc", k = 4) + #month effect k = 4
+      s(year, k = 8) + #year effect k = 8
+      ti(month, year, k = 6), #month/ year interaction k = 6
     family = "betar",
     #beta location scale distribution for the data
     data = NDVI_2000_2021,
@@ -244,6 +244,9 @@ ggplot() +
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 
+
+
+#NDVI trends in parks ----
 #look at the ndvi trend in Jasper ----
 Jasper_NDVI <- all_ndvi %>% 
   filter(park %in% c("JASP"))
@@ -353,7 +356,7 @@ ggplot() +
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 
-#look at the ndvi trend in Pacific Rim ----
+#look at the ndvi trend in Waterton ----
 Waterton_NDVI <- all_ndvi %>% 
   filter(park %in% c("WATE"))
 
@@ -366,6 +369,31 @@ ggplot() +
   xlab("Time") +
   ylab("Monthly Mean NDVI") +
   theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# ndvi trend across parks 
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = NDVI_2000_2021, aes(x = year_month, y = ndvi_monthly_mean, col = park)) +
+  geom_smooth(data = NDVI_2000_2021, aes(x = year_month, y = ndvi_monthly_mean, col = park),method = "lm") +
+  #scale_x_continuous(limits = c(2010,2021), expand = c(0,1)) +
+  scale_colour_manual(name="Region",
+                      values = manual_colors) +
+  xlab("Time") +
+  ylab("Monthly Mean NDVI") +
+  theme_bw() +
+  # geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title.y = element_text(size=12, family = "sans", face = "bold"),
