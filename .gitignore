@@ -4,8 +4,11 @@
 .Ruserdata
 
 
+data/shapefiles/ca_provinces/CLAB_CA_2023-09-08
+
 data/ndvi
 data/ndvi/old_ndvi
+data/old
 data/park_attendance
 data/parks_polygon_Albers
 
