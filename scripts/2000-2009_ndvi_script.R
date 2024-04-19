@@ -5,11 +5,11 @@ library(ggplot2) # for scatter plot
 
 # NDVI 2000-2009 ----
 
-nc.year_dir <- "D:/ndvi00-09"
-setwd(nc.year_dir)
+nc.year_dir <- "data/ndvi/ndvi00-09"
+# setwd(nc.year_dir)
 
 # import all of the boundaries for Canadian parks
-CAshape <- st_read("C:/Users/grace/Documents/GitHub/HWI_parks/data/CLAB_CA_2023-09-08")
+CAshape <- st_read("data/shapefiles/ca_provinces/CLAB_CA_2023-09-08")
 
 # Create a list of the names of the 25 parks to be studied 
 test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
@@ -21,7 +21,7 @@ test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
 
 
 # import JASP shapefile
-jasper_shape <- readRDS("../rds/jasper.rds")
+jasper_shape <- readRDS("data/shapefiles/parks_polygons/jasper.rds")
 
 # Define the CRS
 CRS_canada <- crs(jasper_shape)
@@ -32,11 +32,11 @@ year_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FAL
 RESULTS_2 <- list()
 
 # Loop through each year folder
-for (i in 1:length(year_folders)) { #length(year_folders)
+for (i in 1:length(year_folders)) { 
   
   year <- gsub(pattern = "ndvi",
                replacement = "",
-               x = gsub(pattern = "D:/ndvi00-09/",
+               x = gsub(pattern = "data/ndvi/ndvi00-09/",
                         replacement = "",
                         x = year_folders[i]))
   
@@ -118,13 +118,14 @@ save(RESULTS_2, file = "test.rda")
 # convert the final list to a data frame (daily ndvi mean and var)
 RESULTS_2 <- do.call(rbind,RESULTS_2) 
 
-write.csv(RESULTS_2, "C:/Users/grace/Documents/GitHub/HWI_parks/results/morendvi.csv", row.names=FALSE)
-RESULTS2_df <- read.csv("results/morendvi.csv")
+write.csv(RESULTS_2, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/morendvi.csv", row.names=FALSE)
+RESULTS2_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/morendvi.csv")
 
 # close loop of all the years 
 
-#Create data frame by grouping park means according to months and years ---- 
+#...........................................................................
 
+#Create data frame by grouping park means according to months and years ---- 
 
 #convert to calendar dates
 RESULTS2_df$date <- as.Date(RESULTS2_df$date, format = "%Y_%m_%d")
@@ -146,8 +147,8 @@ more_data_ndvi_mean <- aggregate(ndvi_daily_mean ~ month + year + park, data = R
 names(more_data_ndvi_mean)[4] <- "ndvi_monthly_mean"
 
 #save datafram as a csv
-write.csv(more_data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_parks/results/more_monthly_mean_ndvi.csv", row.names=FALSE)
-more_mean_ndvi_df <- read.csv("results/more_monthly_mean_ndvi.csv")
+write.csv(more_data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/more_monthly_mean_ndvi.csv", row.names=FALSE)
+more_mean_ndvi_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/more_monthly_mean_ndvi.csv")
 
 # preparing for GAM ----
 # rescale ndvi in dataframe
@@ -165,15 +166,12 @@ as.numeric(more_mean_ndvi_df$year)
 NDVI_2000_2021 <- rbind(more_mean_ndvi_df,mean_ndvi_df)
 
 #save datafram as a csv
-write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_parks/results/NDVI_2000_2021.csv", row.names=FALSE)
-NDVI_2000_2021 <- read.csv("results/NDVI_2000_2021.csv")
+write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021.csv", row.names=FALSE)
+NDVI_2000_2021 <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021.csv")
 #Convert PARK ID to a factor
 NDVI_2000_2021$park <- as.factor(NDVI_2000_2021$park)
 
-
-# change year and month into dates --> add year_mon column 
-
-
+# ..................................................................................
 # NDVI & parks GAM! ----
 
 # BAM in parks, month, year
@@ -206,8 +204,8 @@ residuals(all_ndvi_gam)
 NDVI_2000_2021$residuals <- residuals(all_ndvi_gam)
 
 #save datafram as a csv
-write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_parks/results/NDVI_2000_2021_residual.csv", row.names=FALSE)
-NDVI_2000_2021_residuals <- read.csv("results/NDVI_2000_2021_residual.csv")
+write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual.csv", row.names=FALSE)
+NDVI_2000_2021_residuals <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual.csv")
 
 # looking at the distribution of the residuals 
 hist(NDVI_2000_2021$residuals)
@@ -223,8 +221,8 @@ NDVI_2000_2021$year_month <- format(NDVI_2000_2021$date, "%Y-%m")
 NDVI_2000_2021$date <- as.Date(NDVI_2000_2021$date)
 
 #save datafram as a csv
-write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_parks/results/NDVI_2000_2021_residual_date.csv", row.names=FALSE)
-all_ndvi <- read.csv("results/NDVI_2000_2021_residual_date.csv")
+write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual_date.csv", row.names=FALSE)
+all_ndvi <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual_date.csv")
 
 
 #plot the trend of residuals by year_month ----
@@ -286,4 +284,4 @@ ggplot() +
         plot.background = element_rect(fill = "white", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm")) 
   
-ggsave(banf_ndvi, filename = "figures/banf_ndvi_trend.png", width = 6, height = 4, units = "in", dpi = 600, background = "white")
+ggsave(banf_ndvi, filename = "figures/case_study_banff/banf_ndvi_trend.png", width = 6, height = 4, units = "in", dpi = 600, background = "white")

@@ -10,7 +10,7 @@ PARKS <- c("WATE", "ELKI", "JASP", "WOOD",
 
 RESIDUALS <- seq(-2, 2, 0.01)
 
-RESULTS222 <- list()
+RESULTS3 <- list()
 max <- list()
 for(i in 1:length(PARKS)){
   
@@ -21,23 +21,27 @@ for(i in 1:length(PARKS)){
                          se = TRUE # standard error = true --> for looking at confidence interval
   )
   
-  RESULTS222[[i]] <- data.frame(park = PARKS[i],
+  RESULTS3[[i]] <- data.frame(park = PARKS[i],
                                 residual = RESIDUALS,
                                 prediction = all_parks_predict$fit,
                                 SE = all_parks_predict$se.fit)
   
   # find inflection point (max)
-  #print(RESULTS222[[i]][which(RESULTS222[[i]]$prediction == max(RESULTS222[[i]]$prediction)),"residual"]) #401, 401
-  max_index <- which(RESULTS222[[i]]$prediction == max(RESULTS222[[i]]$prediction))
-  max[[i]] <- RESULTS222[[i]][max_index, ]
+  max_index <- which(RESULTS3[[i]]$prediction == max(RESULTS3[[i]]$prediction))
+  max[[i]] <- RESULTS3[[i]][max_index, ]
   
   
   
   
 }
 
-RESULTS222 <- do.call(rbind, RESULTS222)
+RESULTS3 <- do.call(rbind, RESULTS3)
 max <- do.call(rbind, max)
+
+# ..........................................................................................
+# plotting the model results for each individual park
+
+
 # AULA ----
 AULApredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
                                                              
@@ -45,8 +49,6 @@ AULApredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2,
                        type = "response", # to see how HWI responds to NDVI residuals
                        se = TRUE # standard error = true --> for looking at confidence interval
 )
-
-test <- as.data.frame(AULApredict$fit)
 
 
 # plot the line for the park 
@@ -159,7 +161,7 @@ BANFpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2,
                        se = TRUE # standard error = true --> for looking at confidence interval
 )
 
-png(file = "figures/BANFF.png", width = 6, height = 4, units = "in", res = 600)
+png(file = "figures/case_study_banff/BANFF_final.png", width = 6, height = 4, units = "in", res = 600)
 # make axis title bigger
 par(cex.lab = 1.2)
 # plot the line for the park 
@@ -192,9 +194,6 @@ lines(y = GBISpredict$fit - 1.96*GBISpredict$se.fit, x = seq(-2, 2, 0.01), type 
 points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "GBIS"),])
 # find inflection point (max)
 which(GBISpredict$fit == max(GBISpredict$fit)) #1, 1
-
-
-test5 <- as.data.frame(GBISpredict$fit)
 
 
 # KOOT ----

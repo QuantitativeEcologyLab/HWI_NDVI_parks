@@ -58,7 +58,7 @@ parks_esri <- st_transform(parks_sf, crs = esri_102001)
 #convert back to dataframe 
 parks_esri_df <- st_drop_geometry
 
-
+#convert to coordinates
 coordinates <- st_coordinates(parks_esri)
 
 # combine reprojected esri coordinates into original coordinates df
@@ -72,13 +72,16 @@ names(park_coordinates_esri)[2] <- "esri_lat"
 #level 0 = country; level 1 = province/state; level 2 = counties
 provinces <- gadm(country="Canada", level=1, path = tempdir())
 
-provinces <- readRDS("provinces.tif/gadm/gadm41_CAN_1_pk.rds")
+#save as an RDS
+saveRDS(provinces,file ="data/shapefiles/CAprovinces_map.rds")
+
+provinces <- readRDS("data/shapefiles/CAprovinces_map.rds")
 
 #plot both shape files, layered
 plot(provinces)
 
 # import ndvi file
-ndvi_bg <- "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi/2021ndvi/2021_jun/VIIRS-Land_v001-preliminary_NPP13C1_S-NPP_20210630_c20220419155820.nc"
+ndvi_bg <- "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2021ndvi/2021_jun/VIIRS-Land_v001-preliminary_NPP13C1_S-NPP_20210630_c20220419155820.nc"
 ndvi_bg <- terra::rast(ndvi_bg) #bg is 2021 jun 30
 plot(ndvi_bg$NDVI)
 
@@ -103,15 +106,15 @@ bbox <- ext(c(-141.006866, -52.6000041603337, 41.6999988824795, 83.0999985311861
 bg_crop <- crop(provinces_bg, bbox)
 
 #write raster
-writeRaster(bg_crop, "figures/bg_crop.tif", overwrite = TRUE)
+writeRaster(bg_crop, "figures/old_figures/bg_crop.tif", overwrite = TRUE)
 
 #REPROJECT BG_CROP 
 bg_reproject <- terra::project(bg_crop,
                                "ESRI:102001")
 
 plot(bg_crop)
-saveRDS(bg_crop,file ="rds/bg_crop.rds")
-bg_crop <- readRDS("rds/bg_crop.rds")
+saveRDS(bg_crop,file ="figures/old_figures/bg_crop.rds")
+bg_crop <- readRDS("figures/old_figures/bg_crop.rds")
 
 #crop the map
 Can_crop <- crop(provinces, bbox)
@@ -137,7 +140,7 @@ NDVI_cols <- colorRampPalette(rev(c("#0f2902", "#1d3900","#193401","#274009","#2
                                     "#3d4f21", "#485921","#536321","#69761f","#868924",
                                     "#8d8e37","#aaa263","#b5a975","#c2b58c","#c7b995",
                                     "#cdbf9f","#e3d6c6","#e7dbce")))
-
+#plot map withESRI:102001 projection
 reprojected_new_map <- 
   ggplot() +
   geom_spatraster(data = bg_reproject, alpha = 0.8, maxcell = 5e+08) + #ndvi bg
@@ -155,8 +158,7 @@ reprojected_new_map <-
   scale_colour_manual(name="Park",
                       values = manual_colors) +
   scale_shape_manual(values = rep(17,25)) +
-  #scale_alpha_manual(values = c(0.8,0.6)) +
-  theme(#panel.background = element_blank(),
+  theme(
     panel.background = element_rect(fill="transparent"), #transparent panel bg
     plot.background = element_rect(fill="transparent", color=NA), #transparent plot bg
     panel.grid.major = element_blank(), #remove major gridlines

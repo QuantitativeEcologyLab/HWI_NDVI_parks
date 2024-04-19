@@ -46,9 +46,9 @@ hwi_ndvi <- aggregate(HWI ~ month + year + park + ndvi_monthly_mean + scaled_mea
 hwi_ndvi$year_month <- paste(hwi_ndvi$year, hwi_ndvi$month, sep = "-")
 
 # save the data frame
-saveRDS(hwi_ndvi,file ="rds/hwi_ndvi.rds")
+saveRDS(hwi_ndvi,file ="data/hwi_ndvi.rds")
 
-#plot the trend of residuals by year_month ----
+#visualise the trend of residuals by year_month ----
 ggplot() +
   geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
   geom_point(data = hwi_ndvi, aes(x = year_month, y = residuals, col = park)) +
@@ -69,11 +69,10 @@ ggplot() +
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
 
-# plot HWI with NDVI residuals ----
+# visualise HWI with NDVI residuals ----
 ggplot() +
   geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
   geom_point(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park)) +
-  #geom_smooth(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park),method = "lm") +
   xlab("Residuals") +
   ylab("HWI") +
   scale_y_log10() +

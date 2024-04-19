@@ -1,9 +1,12 @@
 # loading packages ----
-library("xml2")
-library("rvest")
-library("dplyr")
-library("terra")
-library("raster")
+library(xml2)
+library(rvest)
+library(dplyr)
+library(terra)
+library(raster)
+library(lubridate) #convert whole columns to dates
+library(zoo) #dates as year month
+
 
 # loop for extracting all links for 2010 ----
 url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/"
@@ -277,12 +280,14 @@ for(j in 6:length(linkys)){
   
 }
 
+#..............................................................................................
+
 # for loop for cropping all the ndvi data into the park polygons and take monthly mean
-nc.year_dir <- "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi"
-setwd(nc.year_dir)
+nc.year_dir <- "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/ndvi"
+#setwd(nc.year_dir)
 
 # import all of the boundaries for Canadian parks
-CAshape <- st_read("C:/Users/grace/Documents/GitHub/HWI_parks/data/CLAB_CA_2023-09-08")
+CAshape <- st_read("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/shapefiles/ca_provinces/CLAB_CA_2023-09-08")
 
 # Create a list of the names of the 25 parks to be studied 
 test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
@@ -294,7 +299,7 @@ test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
 
 
 # import JASP shapefile
-jasper_shape <- readRDS("../rds/jasper.rds")
+jasper_shape <- readRDS("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/shapefiles/parks_polygons/jasper.rds")
 
 # Define the CRS
 CRS_canada <- crs(jasper_shape)
@@ -309,7 +314,7 @@ for (i in 1:length(year_folders)) { #length(year_folders)
   
   year <- gsub(pattern = "ndvi",
                replacement = "",
-               x = gsub(pattern = "C:/Users/grace/Documents/GitHub/HWI_parks/ndvi/",
+               x = gsub(pattern = "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/",
                         replacement = "",
                         x = year_folders[i]))
   
@@ -389,13 +394,13 @@ for (i in 1:length(year_folders)) { #length(year_folders)
 RESULTS <- do.call(rbind,RESULTS) 
 
 #save as CSV
-write.csv(RESULTS, "C:/Users/grace/Documents/GitHub/HWI_parks/results/parksndvi.csv", row.names=FALSE)
-RESULTS_df <- read.csv("results/parksndvi.csv")
+write.csv(RESULTS, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/parksndvi.csv", row.names=FALSE)
+RESULTS_df <- read.csv("data/models/model_results/parksndvi.csv")
 
 # close loop of all the years 
 
 # 2000-2009 NDVI ----
-# in another script: 2000-2009_parks_ndvi in HWI 
+# in another script: 2000-2009_ndvi_script
 
 
 # ................................................................
@@ -422,8 +427,8 @@ data_ndvi_mean <- aggregate(ndvi_daily_mean ~ month + year + park, data = RESULT
 names(data_ndvi_mean)[4] <- "ndvi_monthly_mean"
 
 #save datafram as a csv
-write.csv(data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_parks/results/monthly_mean_ndvi.csv", row.names=FALSE)
-mean_ndvi_df <- read.csv("results/monthly_mean_ndvi.csv")
+write.csv(data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/monthly_mean_ndvi.csv", row.names=FALSE)
+mean_ndvi_df <- read.csv("data/models/model_results/monthly_mean_ndvi.csv")
 
 # rescale ndvi in dataframe to 0-1 for beta gam
 mean_ndvi_df <- mean_ndvi_df %>% 
@@ -438,7 +443,7 @@ as.numeric(mean_ndvi_df$year)
 
 # gam for 2010-2021 ndvi ----
 # GAM
-test <-
+ndvi2010_2021_gam <-
   gam(
     scaled_mean_ndvi ~ #scale ndvi from 0 to 1 to fit beta distribution
       # fixed effects
@@ -454,14 +459,14 @@ test <-
   )
 
 
-summary(test)
-plot(test, pages = 1)
+summary(ndvi2010_2021_gam)
+plot(ndvi2010_2021_gam, pages = 1)
 
 # residuals of model 1
-residuals(test)
+residuals(ndvi2010_2021_gam)
 
 # add the residuals as a new column into the HWI_grouped_species dataframe ----
-mean_ndvi_df$residuals <- residuals(test)
+mean_ndvi_df$residuals <- residuals(ndvi2010_2021_gam)
 
 # looking at the distribution of the residuals 
 hist(mean_ndvi_df$residuals)

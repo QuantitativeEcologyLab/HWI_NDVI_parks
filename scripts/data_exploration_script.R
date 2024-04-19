@@ -1,6 +1,4 @@
 # Loading packages ---- 
-options(timeout = max(1000, getOption("timeout")))
-library(lattice) # for making graphs
 library(ggplot2) # for plots
 library(dplyr) # for pipes
 library(lubridate) #convert whole columns to dates
@@ -14,7 +12,7 @@ library(fBasics) #for creating colour palette
 library(mgcv) #gam
 
 # importing data
-animals_involved <- read.csv("data/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
+animals_involved <- read.csv("data/hwi/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
 
 # filter out all the human wildlife interactions ----
 HWI <- animals_involved %>% 
@@ -97,8 +95,8 @@ HWI_parks <- HWI_parks[HWI_parks$species != "Unknown sea lion",]
 HWI_parks <- HWI_parks[HWI_parks$species != "Unknown deer",]
 
 # save HWI_parks ----
-write.csv(HWI_parks, "C:/Users/grace/Documents/GitHub/HWI_parks/results/hwi_parks.csv", row.names=FALSE)
-HWI_parks <- read.csv("results/hwi_parks.csv")
+write.csv(HWI_parks, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/old/hwi_parks.csv", row.names=FALSE)
+HWI_parks <- read.csv("old/hwi_parks.csv")
 
 #Count number of incidents by park
 incident_count <- HWI_parks %>% 
@@ -595,25 +593,3 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
-
-# Group species by higher taxonomic groups ---- 
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Grizzly Bear", "Black Bear", "Polar Bear" )] <- "Bear"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Domestic Cattle", "Domestic Cat", "Domestic Dog", "Domestic Horse", "Domestic Sheep")] <- "Domestic animal"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Mule Deer", "White-tailed Deer", "Black-tailed deer" )] <- "Deer"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Red Squirrel", "Beaver", "Columbian Ground Squirrel", "Hoary Marmot", "Woodchuck", "Woodrat", "Muskrat", "Richardson's Ground Squirrel", "Red-tailed Chipmunk", "Porcupine", "Golden-mantled Ground Squirrel", "Brown Rat", "Least Chipmunk", "Eastern Chipmunk", "Northern Flying Squirrel", "Black-tailed prairie dog", "Yellow-bellied Marmot")] <- "Rodent"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Massasauga", "Prairie Rattlesnake", "Smooth Greensnake", "Bullsnake", "Water Snake", "Plains Gartersnake", "Common Gartersnake", "Yellow-bellied Racer" )] <- "Snake"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Silver-haired Bat", "Big Brown Bat", "Little Brown Myotis" )] <- "Bat"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Tiger Salamander", "Long-toed Salamander" )] <- "Salamander"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Harbour seal", "California Sea Lion", "Northern Elephant Seal", "Steller Sea Lion" )] <- "Pinneped"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Marten", "Wolverine", "Badger", "River Otter", "Ermine", "Least Weasel" )] <- "Weasel"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Greater White-fronted Goose", "Canada Goose", "Trumpeter swan", "Ring-billed Gull", "Double-crested Cormorant", "Mallard", "Common Loon", "American Coot", "Common Merganser", "Red-necked Grebe", "Western Grebe")] <- "Waterfowl"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("American Tree Sparrow", "House Sparrow", "Barn Swallow", "Field Sparrow", "American Robin", "Golden-crowned Kinglet", "Common Redpoll", "Dark-eyed Junco" )] <- "Songbird"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Great Horned Owl", "Great Grey Owl", "Barred Owl", "Northern Pygmy-Owl", "Northern Saw-whet Owl", "Burrowing Owl" )] <- "Owl"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Semipalmated Plover", "Great Blue Heron", "Killdeer" )] <- "Shorebird"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Downy Woodpecker", "Pileated Woodpecker", "Hairy Woodpecker", "Lewis's Woodpecker" )] <- "Woodpecker"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Bald Eagle", "Osprey", "Golden Eagle", "Sharp-shinned Hawk", "Sharp-shinned Hawk" )] <- "Accipitridae"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Blue Grouse", "Ruffed Grouse", "Spruce Grouse", "Greater Sage-grouse", "Wild Turkey" )] <- "Phasianidae"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Rufous Hummingbird", "Ruby-throated Hummingbird" )] <- "Hummingbird"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Plains Bison", "Wood Bison" )] <- "Bison"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Raven", "Crow",  "Gray Jay",  "Steller's Jay", "Magpie" )] <- "Corvid"
-HWI_grouped_species$species[HWI_grouped_species$species %in% c("Wasp", "Ant", "Earwigs" )] <- "Insect"
