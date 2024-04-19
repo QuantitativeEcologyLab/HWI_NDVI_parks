@@ -23,7 +23,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2010ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2010ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -53,7 +53,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2011ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2011ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -75,7 +75,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2012ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2012ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -97,7 +97,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2013ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2013ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -119,7 +119,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2014ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2014ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -141,7 +141,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2015ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2015ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -163,7 +163,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2016ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2016ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -185,7 +185,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2017ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2017ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -207,7 +207,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2018ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2018ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -229,7 +229,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2019ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2019ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -251,7 +251,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2020ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2020ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -273,7 +273,7 @@ LINKS <- do.call(rbind, LINKS)
 
 for(j in 6:length(linkys)){
   url_path <- paste(url, linkys[j], sep = "")
-  path <- paste("C:/Users/grace/Documents/GitHub/HWI_parks/2021ndvi/",linkys[j], sep="")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2021ndvi/",linkys[j], sep="")
   try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
   
   Sys.sleep(5)
@@ -284,10 +284,10 @@ for(j in 6:length(linkys)){
 
 # for loop for cropping all the ndvi data into the park polygons and take monthly mean
 nc.year_dir <- "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/ndvi"
-#setwd(nc.year_dir)
+# setwd(nc.year_dir)
 
 # import all of the boundaries for Canadian parks
-CAshape <- st_read("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/shapefiles/ca_provinces/CLAB_CA_2023-09-08")
+CAshape <- st_read("data/shapefiles/ca_provinces/CLAB_CA_2023-09-08")
 
 # Create a list of the names of the 25 parks to be studied 
 test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
@@ -314,7 +314,7 @@ for (i in 1:length(year_folders)) { #length(year_folders)
   
   year <- gsub(pattern = "ndvi",
                replacement = "",
-               x = gsub(pattern = "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/",
+               x = gsub(pattern = "data/ndvi/",
                         replacement = "",
                         x = year_folders[i]))
   
@@ -395,7 +395,7 @@ RESULTS <- do.call(rbind,RESULTS)
 
 #save as CSV
 write.csv(RESULTS, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/parksndvi.csv", row.names=FALSE)
-RESULTS_df <- read.csv("data/models/model_results/parksndvi.csv")
+RESULTS_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/parksndvi.csv")
 
 # close loop of all the years 
 

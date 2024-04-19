@@ -5,6 +5,232 @@ library(ggplot2) # for scatter plot
 
 # NDVI 2000-2009 ----
 
+# extracting all links for 2000-2009 ---- 
+# loop for 2000
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2000/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2000ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2001
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2001/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2001ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2002
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2002/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2002ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> then probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2003
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2003/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2003ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2004
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2004/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2004ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+
+# loop for 2005
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2005/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2005ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2006
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2006/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2006ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2007
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2007/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2007ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2008
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2008/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2008ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2009
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2009/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2009ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+
+
+# cropping the ndvi to parks and taking mean monthly ndvi for 2000-2009 ----
+
 nc.year_dir <- "data/ndvi/ndvi00-09"
 # setwd(nc.year_dir)
 
