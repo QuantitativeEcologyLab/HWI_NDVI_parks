@@ -83,6 +83,21 @@ ggplot() +
 ggsave(banf_ndvi, filename = "figures/case_study_banff/banf_ndvi_trend.png", width = 6, height = 4, units = "in", dpi = 600, background = "white")
 
 #.........................................................................................
+# Add the results for Banff 
+# make axis title bigger
+BANFpredict <- readRDS("data/models/model_results/BANFpredict.rds")
+
+par(cex.lab = 1.2)
+# plot the line for the park 
+plot(y = BANFpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250), xlab = "NDVI Residuals", ylab = "Monthly HWIs", col = "#EF0096", font.lab = 2)
+# upper conf interval
+lines(y = BANFpredict$fit + 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = BANFpredict$fit - 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[hwi_ndvi$park == "BANF",], pch = 16, col = alpha("#EF0096",0.3))
+
+#.........................................................................................
 
 # Plotting them side by side 
 banff_paired_plots <- grid.arrange(banf_hwi_gam, banf_ndvi,

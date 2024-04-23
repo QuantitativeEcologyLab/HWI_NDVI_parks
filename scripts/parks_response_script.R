@@ -158,6 +158,7 @@ BANFpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2,
                        type = "response", # to see how HWI responds to NDVI residuals
                        se = TRUE # standard error = true --> for looking at confidence interval
 )
+BANFpredict <- saveRDS(BANFpredict, file = "data/models/model_results/BANFpredict.rds")
 
 png(file = "figures/case_study_banff/BANFF_final.png", width = 6, height = 4, units = "in", res = 600)
 # make axis title bigger
