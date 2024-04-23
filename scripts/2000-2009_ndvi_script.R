@@ -418,9 +418,13 @@ all_ndvi_gam <-
     method = 'fREML'
   )
 
+saveRDS(all_ndvi_gam, file= "data/models/all_ndvi_gam")
+all_ndvi_gam <- readRDS("data/models/all_ndvi_gam")
 
 summary(all_ndvi_gam)
+png(file = "figures/NDVIgam.png", width = 6, height = 5, units = "in", res = 600)
 bam_plot <- plot(all_ndvi_gam, pages = 1, scheme = 2)
+dev.off()
 
 
 # residuals of model 1
@@ -429,7 +433,7 @@ residuals(all_ndvi_gam)
 # add the residuals as a new column into the HWI_grouped_species dataframe ----
 NDVI_2000_2021$residuals <- residuals(all_ndvi_gam)
 
-#save datafram as a csv
+#save dataframe as a csv
 write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual.csv", row.names=FALSE)
 NDVI_2000_2021_residuals <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual.csv")
 

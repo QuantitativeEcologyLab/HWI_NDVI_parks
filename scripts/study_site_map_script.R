@@ -4,6 +4,7 @@ library(terra) #shape file
 library(sf) # spatial data
 library(sp) #Spatial Points function
 library(ggplot2) # for scatter plot
+library(tidyterra) #geomspatraster
 
 # new map ----
 
@@ -64,11 +65,15 @@ coordinates <- st_coordinates(parks_esri)
 # combine reprojected esri coordinates into original coordinates df
 park_coordinates_esri <- cbind(coordinates, new_park_coordinates)
 
+saveRDS(park_coordinates_esri,file ="data/park_coordinates_esri.rds")
+
+park_coordinates_esri <- readRDS("data/park_coordinates_esri.rds")
+
 # renaming the columns
 names(park_coordinates_esri)[1] <- "esri_long"
 names(park_coordinates_esri)[2] <- "esri_lat"
 
-# Canada and US map ----
+# Canada map ----
 #level 0 = country; level 1 = province/state; level 2 = counties
 provinces <- gadm(country="Canada", level=1, path = tempdir())
 
@@ -90,11 +95,15 @@ reprojected_bg <- terra::project(ndvi_bg,
                                  provinces,
                                  method = "near")
 
-#crop reprojected ndvi bg to CanUS shape
+saveRDS(reprojected_bg,file ="data/shapefiles/reprojected_bg.rds")
+
+reprojected_bg <- readRDS("data/shapefiles/reprojected_bg.rds")
+
+#crop reprojected ndvi bg to Can shape
 cropped_provinces_ndvi <- crop(reprojected_bg, provinces, mask = TRUE) 
 provinces_bg <- cropped_provinces_ndvi$NDVI
-saveRDS(provinces_bg,file ="rds/Canmap.rds")
-provinces_bg <- readRDS("rds/Canmap.rds")
+saveRDS(provinces_bg,file ="data/shapefiles/Canmap.rds")
+provinces_bg <- readRDS("data/shapefiles/Canmap.rds")
 
 #find the extent of the raster
 ext(provinces_bg)
@@ -112,14 +121,14 @@ writeRaster(bg_crop, "figures/old_figures/bg_crop.tif", overwrite = TRUE)
 bg_reproject <- terra::project(bg_crop,
                                "ESRI:102001")
 
-plot(bg_crop)
-saveRDS(bg_crop,file ="figures/old_figures/bg_crop.rds")
-bg_crop <- readRDS("figures/old_figures/bg_crop.rds")
+plot(bg_reproject)
+saveRDS(bg_reproject,file ="figures/old_figures/bg_reproject.rds")
+bg_reproject <- readRDS("figures/old_figures/bg_reproject.rds")
 
 #crop the map
 Can_crop <- crop(provinces, bbox)
-saveRDS(Can_crop,file ="rds/Can_crop.rds")
-Can_crop <- readRDS("rds/Can_crop.rds")
+saveRDS(Can_crop,file ="figures/old_figures/Can_crop.rds")
+Can_crop <- readRDS("figures/old_figures/Can_crop.rds")
 
 plot(Can_crop)
 
@@ -135,13 +144,16 @@ manual_colors <- c("WATE"= "#560133", "ELKI" = "#790149", "JASP" = "#9F0162", "W
 # Plotting the map 
 provinces_sf <- st_as_sf(Can_crop)
 
+saveRDS(provinces_sf,file ="data/shapefiles/provinces_sf.rds")
+provinces_sf <- readRDS("data/shapefiles/provinces_sf.rds")
+
 #NDVI colour palette
 NDVI_cols <- colorRampPalette(rev(c("#0f2902", "#1d3900","#193401","#274009","#2e4511",
                                     "#3d4f21", "#485921","#536321","#69761f","#868924",
                                     "#8d8e37","#aaa263","#b5a975","#c2b58c","#c7b995",
                                     "#cdbf9f","#e3d6c6","#e7dbce")))
 #plot map withESRI:102001 projection
-reprojected_new_map <- 
+#reprojected_new_map <- 
   ggplot() +
   geom_spatraster(data = bg_reproject, alpha = 0.8, maxcell = 5e+08) + #ndvi bg
   scale_fill_gradientn(name = "Normalized Difference Vegetation Index",

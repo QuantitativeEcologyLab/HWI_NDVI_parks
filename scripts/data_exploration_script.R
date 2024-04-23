@@ -96,7 +96,7 @@ HWI_parks <- HWI_parks[HWI_parks$species != "Unknown deer",]
 
 # save HWI_parks ----
 write.csv(HWI_parks, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/old/hwi_parks.csv", row.names=FALSE)
-HWI_parks <- read.csv("old/hwi_parks.csv")
+HWI_parks <- read.csv("data/old/hwi_parks.csv")
 
 #Count number of incidents by park
 incident_count <- HWI_parks %>% 
@@ -120,7 +120,7 @@ sp::plot(park_location, add = TRUE, col = 'coral', pch = 19, cex = 0.5)
 
 #Create another data frame by grouping according to months and years
 HWI_grouped_date <- aggregate(HWI ~ year_month + park, data = HWI_parks, FUN = "length")
-HWI_grouped_date$year_month <- as.Date(HWI_grouped_date$year_month, format = "%Y-%m")
+HWI_grouped_date$year_month <- as.yearmon(HWI_grouped_date$year_month)
 HWI_grouped_date$year <- lubridate::year(HWI_grouped_date$year_month)
 HWI_grouped_date$month <- lubridate::month(HWI_grouped_date$year_month)
 
@@ -316,6 +316,7 @@ model1 <- gam(HWI ~
 
 summary(model1)
 plot(model1, pages = 1)
+model1 <- saveRDS(model1, file = "data/models/model1")
 
 # residuals of model 1
 residuals(model1)

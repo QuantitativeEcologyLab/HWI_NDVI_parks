@@ -1,6 +1,7 @@
 # loading packages
 library(ggplot2)
 library(gridExtra) # for multi-panel plotting 
+library(dplyr)
 
 # importing data
 hwi_ndvi <- readRDS("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/hwi_ndvi.rds")

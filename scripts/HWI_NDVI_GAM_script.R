@@ -1,14 +1,16 @@
 # loading packages ----
 library(mgcv)
-library(mgcViz)
-library(gratia)
+library(mgcViz) #visualise gam 
+library(gratia) #plot gam smooths with ggplot2
 library(ggplot2)
 library(dplyr)
-library(viridis)
-library(gridExtra)
+
+
 
 
 # gam for HWI and NDVI residuals ----
+hwi_ndvi <- readRDS("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/hwi_ndvi.rds")
+
 hwi_ndvi$park <- as.factor(hwi_ndvi$park)
 
 all_parks_model <- gam(HWI ~
@@ -21,10 +23,13 @@ all_parks_model <- gam(HWI ~
 
 summary(all_parks_model)
 
-saveRDS(all_parks_model,file ="rds/all_parks_model.rds")
-save(all_parks_model, file = "all_parks_model.rda")
+saveRDS(all_parks_model,file ="data/models/all_parks_model.rds")
+save(all_parks_model, file = "data/models/all_parks_model.rda")
+all_parks_model <- readRDS("data/models/all_parks_model.rds")
 
-# plot to colour code results by park ----
+#........................................................................................
+
+# plot to colour code model results by park ----
 # extract the data
 parks = smooth_estimates(all_parks_model, select = "s(residuals,park)") #extract the data
 # add confidence intervals
@@ -59,5 +64,5 @@ gam_plot <-
                      labels = c(-2, 0, 2))+
   labs(x = "NDVI Residuals", y = "log(monthly HWIs)") #tag = 'a)')
 
-ggsave(gam_plot, filename = "figures/new_gam_plot2_ppt.png", width = 6, height = 5, units = "in", dpi = 600)
+ggsave(gam_plot, filename = "figures/park_hwi_ndvi_trends/gam_plot.png", width = 6, height = 5, units = "in", dpi = 600)
 

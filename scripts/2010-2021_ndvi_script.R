@@ -6,6 +6,7 @@ library(terra)
 library(raster)
 library(lubridate) #convert whole columns to dates
 library(zoo) #dates as year month
+library(mgcv)
 
 
 # loop for extracting all links for 2010 ----
@@ -458,6 +459,8 @@ ndvi2010_2021_gam <-
     method = 'fREML'
   )
 
+ndvi2010_2021_gam <- saveRDS(ndvi2010_2021_gam, file = "data/models/ndvi2010_2021_gam")
+ndvi2010_2021_gam <- readRDS("data/models/ndvi2010_2021_gam")
 
 summary(ndvi2010_2021_gam)
 plot(ndvi2010_2021_gam, pages = 1)

@@ -48,6 +48,9 @@ hwi_ndvi$year_month <- paste(hwi_ndvi$year, hwi_ndvi$month, sep = "-")
 # save the data frame
 saveRDS(hwi_ndvi,file ="data/hwi_ndvi.rds")
 
+#.......................................................................................
+# visualisations ----
+
 #visualise the trend of residuals by year_month ----
 ggplot() +
   geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
@@ -93,4 +96,84 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", color = NA),
         plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
 
+# visualise HWI over time ---- model as a gam!
+hwi_trend <-
+  ggplot() +
+  geom_point(data = hwi_ndvi, aes(x = year, y = HWI, col = park)) +
+  geom_smooth(data = hwi_ndvi, aes(x = year, y = HWI, col = park),
+              method = "gam",
+              formula = y ~ s(x, bs = "tp", k = 5),
+              method.args = list(family = "poisson"),
+              se = F) +
+  xlab("Year") +
+  ylab("Monthly HWIs") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=15, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=15, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "none",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm")) +
+  scale_y_continuous(limits = c(0, 800), expand = c(0,2))+
+  scale_x_continuous(limits = c(2010, 2021), expand = c(0,0.2),
+                     breaks = c(2010,2012,2015,2017,2020),
+                     labels = c(2010,2012,2015,2017,2020))
 
+ggsave(hwi_trend, filename = "figures/supplementary/hwi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")
+
+# monthly HWI with monthly mean NDVI
+monthly_hwi_mean_ndvi <-
+ggplot() +
+  geom_point(data = hwi_ndvi, aes(x = ndvi_monthly_mean, y = HWI, col = park)) +
+  xlab("Monthly Mean NDVI") +
+  ylab("monthly HWI") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggsave(monthly_hwi_mean_ndvi, filename = "figures/supplementary/hwi_and_ndvi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")
+
+# NDVI changes over 21 years
+ndvi2000_2021 <-
+ggplot() +
+  geom_point(data = all_ndvi, aes(x = year, y = ndvi_monthly_mean, col = park), alpha = 0.1) +
+  geom_smooth(data = all_ndvi, aes(x = year, y = ndvi_monthly_mean, col = park),method = "gam", se = FALSE) +
+  xlab("Time") +
+  ylab("Monthly Mean NDVI") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggsave(ndvi2000_2021, filename = "figures/supplementary/ndvi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")

@@ -38,6 +38,9 @@ for(i in 1:length(PARKS)){
 RESULTS3 <- do.call(rbind, RESULTS3)
 max <- do.call(rbind, max)
 
+saveRDS(RESULTS3, file = "data/models/model_results/RESULTS3")
+saveRDS(max, file = "data/models/model_results/max")
+
 # ..........................................................................................
 # plotting the model results for each individual park
 
@@ -95,11 +98,6 @@ KEJIpredict <- predict(all_parks_model, newdata = data.frame(residuals = RESIDUA
                        se = TRUE # standard error = true --> for looking at confidence interval
 )
 
-KEJIpredict <- data.frame(residual = RESIDUALS,
-                          prediction = KEJIpredict$fit,
-                          SE = KEJIpredict$se.fit)
-
-
 # plot the line for the park 
 plot(y = KEJIpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
 # upper conf interval
@@ -109,7 +107,7 @@ lines(y = KEJIpredict$fit - 1.96*KEJIpredict$se.fit, x = seq(-2, 2, 0.01), type 
 # adding the real data into the plots of predictions 
 points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "KEJI"),])
 # find inflection point (max)
-KEJIpredict[which(KEJIpredict$prediction == max(KEJIpredict$prediction)),"residual"] #401, 401
+which(KEJIpredict$fit == max(KEJIpredict$fit)) #401, 401
 
 
 
