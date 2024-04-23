@@ -1,0 +1,2842 @@
+---
+title: "HWI_NDVI_parks_Appendix"
+author: "Yan Lam Grace, Lou"
+date: "2024-04-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# **Overview**
+In this study, we will be modelling the monthly mean Normalized Difference Vegetation Index (NDVI) of 25 selected Canadian national parks over 22 years with the frequency of HWIs in each park over 12 years to identify trends. 
+
+```{r loading packages, message = TRUE}
+library(ggplot2) # for plots
+library(dplyr) # for pipes
+library(lubridate) #convert whole columns to dates
+library(zoo) #dates as year month
+library(canadianmaps) #import annotated map of Canada
+library(sf) # spatial data
+library(sp) #Spatial Points function
+library(rstudioapi) #for creating colour palette
+library(grDevices) #for creating colour palette
+library(fBasics) #for creating colour palette
+library(mgcv) #gam
+library(geodata) # for downloading provinces 
+library(terra) #shape file 
+library(xml2)
+library(rvest)
+library(raster)
+library(tidyterra) #for geom_spat*() functions (study site map)
+library(mgcViz) 
+library(gratia) #for plotting gam smooths in ggplot2
+library(viridis) 
+library(gridExtra) # for paired plots (Banff case study)
+```
+
+```{r loading data, echo = FALSE} 
+# these files are all obtained through the code below
+park_coordinates <- read.csv("data/park_coordinates.csv")
+model1 <- readRDS("data/models/model1")
+provinces <- readRDS("data/shapefiles/CAprovinces_map.rds")
+provinces_bg <- readRDS("data/shapefiles/Canmap.rds")
+bg_reproject <- readRDS("figures/old_figures/bg_reproject.rds")
+Can_crop <- readRDS("figures/old_figures/Can_crop.rds")
+park_coordinates_esri <- readRDS("data/park_coordinates_esri.rds")
+provinces_sf <- readRDS("data/shapefiles/provinces_sf.rds")
+RESULTS_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/parksndvi.csv")
+RESULTS2_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/morendvi.csv")
+ndvi2010_2021_gam <- readRDS("data/models/ndvi2010_2021_gam")
+NDVI_2000_2021 <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021.csv")
+all_ndvi_gam <- readRDS("data/models/all_ndvi_gam")
+hwi_ndvi <- readRDS("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/hwi_ndvi.rds")
+all_parks_model <- readRDS("data/models/all_parks_model.rds")
+RESULTS3 <- readRDS("data/models/model_results/RESULTS3")
+max <- readRDS("data/models/model_results/max")
+
+```
+
+
+We obtained daily human-wildlife coexistence data between 2010-2021 in 35 selected Canadian national parks and historical sites from the Government of Canada Open Government database. Among the 9 recorded incident types, only those classified as “Human Wildlife Interaction” (HWI) were selected for. Incidents that involved unknown species or NA values were further omitted from the dataset, resulting in a total of 47,626 incidents for 152 species across the 12 years in 30 parks.
+
+```{r loading HWI data and cleaning the data, echo = TRUE}
+# importing data
+animals_involved <- read.csv("data/hwi/pca-human-wildlife-coexistence-animals-involved-detailed-records-2010-2021.csv")
+
+# filter out all the human wildlife interactions ----
+HWI <- animals_involved %>% 
+  filter(Incident.Type %in% c("Human Wildlife Interaction"))
+
+# Cleaning the first nations heritage site in HWI data ----
+HWI$Protected.Heritage.Area[HWI$Protected.Heritage.Area == "Saoy\xfa-?ehdacho National Historic Site of Canada"]<- "Grizzly Bear Mountain and Scented Grass Hills"
+
+# Convert dates in HWI from characters to date ----
+HWI$Incident.Date <- ymd(HWI$Incident.Date)
+
+# Add a column "Incident Year" to HWI ----
+HWI$Incident.Year <- as.numeric(format(HWI$Incident.Date, "%Y"))
+
+# Add a colume "Incident Month" to HWI ----
+HWI$Incident.Month <- as.numeric(format(HWI$Incident.Date, "%m"))
+
+# Combine year and month into a single column
+HWI$year_month <- as.yearmon(paste(HWI$Incident.Year, HWI$Incident.Month), "%Y %m") 
+
+# Renaming columns in HWI 
+HWI_parks <- HWI %>% 
+  rename("park" = "Protected.Heritage.Area") %>% 
+  rename("species" = "Species.Common.Name") %>% 
+  rename("year" = "Incident.Year") %>% 
+  rename("month" = "Incident.Month") %>% 
+  rename("HWI" = "Incident.Type")
+
+# Shortening park names
+HWI_parks$park[HWI_parks$park == "Banff National Park of Canada"]<- "Banff"
+HWI_parks$park[HWI_parks$park == "Pacific Rim National Park Reserve of Canada"]<- "Pacific_Rim"
+HWI_parks$park[HWI_parks$park == "Waterton Lakes National Park of Canada"]<- "Waterton_Lakes"
+HWI_parks$park[HWI_parks$park == "Kejimkujik National Park and National Historic Site of Canada"]<- "Kejimkujik"
+HWI_parks$park[HWI_parks$park == "Jasper National Park of Canada"]<- "Jasper"
+HWI_parks$park[HWI_parks$park == "Forillon National Park of Canada"]<- "Forillon"
+HWI_parks$park[HWI_parks$park == "Prince Albert National Park of Canada"]<- "Prince_Albert"
+HWI_parks$park[HWI_parks$park == "Kootenay National Park of Canada"]<- "Kootenay"
+HWI_parks$park[HWI_parks$park == "Glacier National Park of Canada"]<- "Glacier"
+HWI_parks$park[HWI_parks$park == "Wapusk National Park of Canada"]<- "Wapusk"
+HWI_parks$park[HWI_parks$park == "Grasslands National Park of Canada"]<- "Grasslands"
+HWI_parks$park[HWI_parks$park == "Bruce Peninsula National Park of Canada"]<- "Bruce_Peninsula"
+HWI_parks$park[HWI_parks$park == "Yoho National Park of Canada"]<- "Yoho"
+HWI_parks$park[HWI_parks$park == "Terra Nova National Park of Canada"]<- "Terra_Nova"
+HWI_parks$park[HWI_parks$park == "Mount Revelstoke National Park of Canada"]<- "Mount_Revelstoke" 
+HWI_parks$park[HWI_parks$park == "Elk Island National Park of Canada"]<- "Elk_Island"
+HWI_parks$park[HWI_parks$park == "Georgian Bay Islands National Park of Canada"]<- "Georgian_Bay_Islands"
+HWI_parks$park[HWI_parks$park == "Prince of Wales Fort National Historic Site of Canada"]<- "Prince_of_Wales_Fort"
+HWI_parks$park[HWI_parks$park == "Point Pelee National Park of Canada"]<- "Point_Pelee"
+HWI_parks$park[HWI_parks$park == "Thousand Islands National Park of Canada"]<- "Thousand_Islands"
+HWI_parks$park[HWI_parks$park == "Wood Buffalo National Park of Canada"]<- "Wood_Buffalo"
+HWI_parks$park[HWI_parks$park == "Prince Edward Island National Park of Canada"]<- "Prince_Edward_Island"
+HWI_parks$park[HWI_parks$park == "Ivvavik National Park of Canada"]<- "Ivvavik"
+HWI_parks$park[HWI_parks$park == "Kouchibouguac National Park of Canada"]<- "Kouchibouguac"
+HWI_parks$park[HWI_parks$park == "Grizzly Bear Mountain and Scented Grass Hills"]<- "Grizzly_Bear_Mountain"
+HWI_parks$park[HWI_parks$park == "Fundy National Park of Canada"]<- "Fundy"
+HWI_parks$park[HWI_parks$park == "Nahanni National Park Reserve of Canada"]<- "Nahanni"
+HWI_parks$park[HWI_parks$park == "Aulavik National Park of Canada"]<- "Aulavik"
+HWI_parks$park[HWI_parks$park == "Sable Island National Park Reserve"]<- "Sable_Island"
+HWI_parks$park[HWI_parks$park == "Fathom Five National Marine Park of Canada"]<- "Fathom_Five"
+HWI_parks$park[HWI_parks$park == "Fort Walsh National Historic Site of Canada"]<- "Fort_Walsh"
+
+# Cleaning the species by omitting unknowns
+HWI_parks <- HWI_parks[HWI_parks$species != "None",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown bear",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown bird",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown bat",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown ungulate",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown gull",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown canid",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown snake",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown fish",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown Duck",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown grouse",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown rodent",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown Myotis bat",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown raptor",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown owl",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown sea lion",]
+HWI_parks <- HWI_parks[HWI_parks$species != "Unknown deer",]
+
+# save HWI_parks ----
+write.csv(HWI_parks, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/old/hwi_parks.csv", row.names=FALSE)
+HWI_parks <- read.csv("data/old/hwi_parks.csv")
+```
+
+We explored the data by plotting a simple map using coordinates from Google Maps to visualise the locations of the parks, and grouped the incidents according to province, year, month, seasons, species for more data exploration.
+
+```{r data exploration visualisations, echo = TRUE}
+#Count number of incidents by park
+incident_count <- HWI_parks %>% 
+  count(HWI_parks$park)
+
+# import Canada shape and extract boundaries only
+canadashape <- st_as_sf(PROV) %>%  
+  st_geometry()
+
+# import coordinates of all national parks, coordinates obtained from Google Maps
+park_coordinates <- read.csv("data/park_coordinates.csv")
+
+# convert coordinates into spatial data
+park_location <- SpatialPoints(park_coordinates[, c("longitude", "latitude")])
+
+# plot parks
+plot(canadashape)
+sp::plot(park_location, add = TRUE, col = 'coral', pch = 19, cex = 0.5) 
+
+#Other visualisations ----
+
+#Create another data frame by grouping according to months and years
+HWI_grouped_date <- aggregate(HWI ~ year_month + park, data = HWI_parks, FUN = "length")
+HWI_grouped_date$year_month <- as.yearmon(HWI_grouped_date$year_month)
+HWI_grouped_date$year <- lubridate::year(HWI_grouped_date$year_month)
+HWI_grouped_date$month <- lubridate::month(HWI_grouped_date$year_month)
+
+# plot HWI across years and months ----
+ggplot() +
+  geom_point(data = HWI_grouped_date, aes(x = year_month, y = HWI, col = park)) +
+  xlab("Time") +
+  ylab("Human-wildlife interactions") +
+  # using heat palette for parks
+  scale_color_manual(values = heatPalette(n=31)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# group parks according to province ----
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Terra_Nova")] <- "NL"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_Edward_Island")] <- "PE"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Kejimkujik", "Sable_Island")] <- "NS"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Kouchibouguac", "Fundy")] <- "NB"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Forillon")] <- "QC"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Bruce_Peninsula", "Fathom_Five", "Georgian_Bay_Islands", "Point_Pelee", "Thousand_Islands")] <- "ON"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_of_Wales_Fort", "Wapusk")] <- "MB"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Prince_Albert")] <- "SK"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Banff", "Elk_Island", "Grasslands","Jasper", "Waterton_Lakes", "Wood_Buffalo")] <- "AB"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Glacier", "Kootenay", "Mount_Revelstoke", "Pacific_Rim", "Yoho")] <- "BC"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Ivvavik")] <- "YT"
+HWI_grouped_date$park[HWI_grouped_date$park %in% c("Aulavik", "Grizzly_Bear_Mountain", "Nahanni")] <- "NT"
+
+# plot parks according to province by month ----
+HWI_province <- HWI_grouped_date %>% 
+  rename("province" = "park")
+
+ggplot() +
+  geom_point(data = HWI_province, aes(x = year_month, y = HWI, col = province), alpha = 0.25) +
+  xlab("Time") +
+  ylab("Human-wildlife interactions") +
+  # using rainbow palette for parks
+  scale_color_manual(values = rainbowPalette(n=12)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# plot species sightings ----
+HWI_grouped_species <- aggregate(HWI ~ year_month + park + species + month + year, data = HWI_parks, FUN = "length")
+
+ggplot() +
+  geom_point(data = HWI_grouped_species, aes(x = species, y = HWI, col = species), alpha = 0.8) +
+  xlab("Time") +
+  ylab("Human-wildlife interactions") +
+  # using rainbow palette for parks
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+#too much data
+
+#still too much data
+ggplot(data = HWI_grouped_species, aes(x = species, y = HWI)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("No. of Sightings") +
+  xlab("Species") +
+  theme(axis.text.x = element_text(angle = 90), axis.title.x = element_text(size=2, family = "sans", face = "bold"),)
+
+# count no. of sightings per species 
+sightings <- HWI_grouped_species %>% 
+  count(HWI_grouped_species$species)
+
+# filter the sightings >10 by creating a subset (top 14 species)
+filtered_sightings <- subset(HWI_grouped_species, HWI_grouped_species$HWI>10)
+
+# plot species with >10 sightings (top 14 species) ----
+ggplot(data = filtered_sightings, aes(x = species, y = HWI)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("No. of Sightings") +
+  xlab("Species") +
+  theme(axis.text.x = element_text(angle = 90), axis.title.x = element_text(size=2, family = "sans", face = "bold"),)
+
+# plot species with >10 sightings (top 8 species) with time ----
+ggplot() +
+  geom_point(data = filtered_sightings, aes(x = year_month, y = HWI, col = species), alpha = 0.8) +
+  xlab("Time") +
+  ylab("Frequency") +
+  # using rainbow palette for parks
+  scale_color_manual(values = rainbowPalette(n=14)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# plot HWI according to seasons ----
+# creating a new dataset with seasons 
+HWI_with_season <- HWI_parks %>%
+  mutate(season = case_when(month %in% 3:5 ~ 'Spring',
+                            month %in% 6:8 ~ 'Summer',
+                            month %in% 9:11 ~ 'Autumn',
+                            TRUE ~ 'Winter'))
+
+#creating a new dataframe with seasons
+HWI_grouped_season <- aggregate(HWI ~ year_month + park + species + season, data = HWI_with_season, FUN = "length")
+
+HWI_grouped_season %>% 
+  count(HWI_grouped_season$season)
+sum(HWI_grouped_season$HWI)
+
+#plotting the number of HWI according to season
+ggplot(data = HWI_grouped_season, aes(x = season, y = HWI)) +
+  geom_bar(stat = "identity", position = position_dodge(), width=0.5) + 
+  scale_x_discrete(guide = guide_axis(n.dodge=1.5)) +
+  ylab("HWI Frequency") +
+  xlab("Season") +
+  theme(axis.title.x = element_text(size=8, family = "sans", face = "bold"),)
+
+# filtering the species with >10 sightings ----
+filtered_season_sightings <- subset(HWI_grouped_season, HWI_grouped_season$HWI>10)
+
+# plotting the number of sightings of species >10 sightings according to season ----
+ggplot() +
+  geom_point(data = filtered_season_sightings, aes(x = season, y = HWI, col = species), alpha = 0.8) +
+  xlab("Season") +
+  ylab("No. of Sightings") +
+  # using rainbow palette for parks
+  scale_color_manual(values = rainbowPalette(n=14)) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+```
+
+A Poisson generalized additive model (GAM) was fitted to the data of Jasper National Park to visualize the normal trend of HWIs across the years, with park and species included as random effects to account for the variability. 
+
+```{r model for visualising normal trend, eval = FALSE}
+# models for visualising the normal trend ----
+HWI_grouped_species <- HWI_grouped_species %>% 
+  mutate(park = factor(park))
+
+HWI_grouped_species$species <- as.factor(HWI_grouped_species$species)
+
+
+model1 <- gam(HWI ~
+                s(park, bs = "fs") +
+                s(species, bs = "fs") +
+                #Add a random effect for species
+                ti(year, park, k = 12, bs = "fs") +
+                #Adjust for a random effect of park, done
+                ti(month, park, k = 8, bs = "fs"), 
+              family = "poisson",
+              data = HWI_grouped_species, method = "REML")
+
+summary(model1)
+plot(model1, pages = 1)
+```
+
+```{r visualise the normal trend in Jasper, echo = TRUE, message = FALSE}
+
+# residuals of model 1
+head(residuals(model1))
+```
+
+```{r}
+# add the residuals as a new column into the HWI_grouped_species dataframe ----
+HWI_grouped_species$residuals <- residuals(model1)
+
+# looking at the distribution of the residuals 
+hist(HWI_grouped_species$residuals)
+#look at the trend in Jasper ----
+Jasper_trend <- HWI_grouped_species %>% 
+  filter(park %in% c("Jasper"))
+
+#plot the trend of residuals by year in Jasper ----
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = Jasper_trend, aes(x = year_month, y = residuals, col = species)) +
+  xlab("Date") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "none",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# Look at the trend of residuals by month in Jasper ----
+Jasper_jan_trend <- Jasper_trend %>% 
+  filter(month %in% c("1"))
+Jasper_feb_trend <- Jasper_trend %>% 
+  filter(month %in% c("2"))
+Jasper_mar_trend <- Jasper_trend %>% 
+  filter(month %in% c("3"))
+Jasper_apr_trend <- Jasper_trend %>% 
+  filter(month %in% c("4"))
+Jasper_may_trend <- Jasper_trend %>% 
+  filter(month %in% c("5"))
+Jasper_jun_trend <- Jasper_trend %>% 
+  filter(month %in% c("6"))
+Jasper_jul_trend <- Jasper_trend %>% 
+  filter(month %in% c("7"))
+Jasper_aug_trend <- Jasper_trend %>% 
+  filter(month %in% c("8"))
+Jasper_sep_trend <- Jasper_trend %>% 
+  filter(month %in% c("9"))
+Jasper_oct_trend <- Jasper_trend %>% 
+  filter(month %in% c("10"))
+Jasper_nov_trend <- Jasper_trend %>% 
+  filter(month %in% c("11"))
+Jasper_dec_trend <- Jasper_trend %>% 
+  filter(month %in% c("12"))
+
+# plot the monthly residual trend data in Jasper by year ----
+ggplot() +
+  geom_point(data = Jasper_jan_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_feb_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_mar_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_apr_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_may_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_jun_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_jul_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_aug_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_sep_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_oct_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_nov_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggplot() +
+  geom_point(data = Jasper_dec_trend, aes(x = year, y = residuals)) +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+
+```
+To prepare for modelling, we obtained polygons for the National Parks and National Park Reserves of Canada Legislative Boundaries from the Government of Canada Open Government database. Among the 30 sites recorded in the HWI data, boundaries for 5 of them were unavailable. These sites were excluded from the analysis. Our final study area therefore consists of 25 parks across the country.
+
+```{r importing province polygons and extracting park polygons, echo = TRUE}
+# importing polygons with sf ----
+
+ABpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_AB_2023-09-08/CLAB_AB_2023-09-08.shp")
+plot(ABpolygon)
+saveRDS(ABpolygon,file ="data/old/ABpolygon.rds")
+
+BCpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_BC_2023-09-08/CLAB_BC_2023-09-08.shp")
+plot(BCpolygon)
+saveRDS(BCpolygon,file ="data/old/BCpolygon.rds")
+
+MBpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_MB_2023-09-08/CLAB_MB_2023-09-08.shp")
+plot(MBpolygon)
+saveRDS(MBpolygon,file ="data/old/MBpolygon.rds")
+
+NBpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_NB_2023-09-08/CLAB_NB_2023-09-08.shp")
+plot(NBpolygon)
+saveRDS(NBpolygon,file ="data/old/NBpolygon.rds")
+
+NLpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_NL_2023-09-08/CLAB_NL_2023-09-08.shp")
+plot(NLpolygon)
+saveRDS(NLpolygon,file ="data/old/NLpolygon.rds")
+
+NSpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_NS_2023-09-08/CLAB_NS_2023-09-08.shp")
+plot(NSpolygon)
+saveRDS(NSpolygon,file ="data/old/NSpolygon.rds")
+
+NTpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_NT_2023-09-08/CLAB_NT_2023-09-08.shp")
+plot(NTpolygon)
+saveRDS(NTpolygon,file ="data/old/NTpolygon.rds")
+
+NUpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_NU_2023-09-08/CLAB_NU_2023-09-08.shp")
+plot(NUpolygon)
+saveRDS(NUpolygon,file ="data/old/NUpolygon.rds")
+
+ONpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_ON_2023-09-08/CLAB_ON_2023-09-08.shp")
+plot(ONpolygon)
+saveRDS(ONpolygon,file ="data/old/ONpolygon.rds")
+
+PEpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_PE_2023-09-08/CLAB_PE_2023-09-08.shp")
+plot(PEpolygon)
+saveRDS(PEpolygon,file ="data/old/PEpolygon.rds")
+
+QCpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_QC_2023-09-08/CLAB_QC_2023-09-08.shp")
+plot(QCpolygon)
+saveRDS(QCpolygon,file ="data/old/QCpolygon.rds")
+
+SKpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_SK_2023-09-08/CLAB_SK_2023-09-08.shp")
+plot(SKpolygon)
+saveRDS(SKpolygon,file ="data/old/SKpolygon.rds")
+
+YTpolygon <- st_read("data/shapefiles/ca_provinces/CLAB_YT_2023-09-08/CLAB_YT_2023-09-08.shp")
+plot(YTpolygon)
+saveRDS(YTpolygon,file ="data/old/YTpolygon.rds")
+
+# fitering for my 30 parks out of all the parks in each polygon ----
+
+#AB
+
+waterton_lakes <- ABpolygon[ABpolygon$CLAB_ID == "WATE", ]
+plot(waterton_lakes)
+saveRDS(waterton_lakes,file ="data/old/waterton_lakes.rds")
+
+elk_island <- ABpolygon[ABpolygon$CLAB_ID == "ELKI", ]
+plot(elk_island)
+saveRDS(elk_island,file ="data/old/elk_island.rds")
+
+jasper <- ABpolygon[ABpolygon$CLAB_ID == "JASP", ]
+plot(jasper)
+saveRDS(jasper,file ="data/old/jasper.rds")
+
+wood_buffalo <- ABpolygon[ABpolygon$CLAB_ID == "WOOD", ]
+plot(wood_buffalo)
+saveRDS(wood_buffalo,file ="data/old/wood_buffalo.rds")
+
+banff <- ABpolygon[ABpolygon$CLAB_ID == "BANF", ]
+plot(banff)
+saveRDS(banff,file ="data/old/banff.rds")
+
+# no polygon for grasslands
+
+# BC
+
+yoho <- BCpolygon[BCpolygon$CLAB_ID == "YOHO", ]
+plot(yoho)
+saveRDS(yoho,file ="data/old/yoho.rds")
+
+kootenay <- BCpolygon[BCpolygon$CLAB_ID == "KOOT", ]
+plot(kootenay)
+saveRDS(kootenay,file ="data/old/kootenay.rds")
+
+mount_revelstoke <- BCpolygon[BCpolygon$CLAB_ID == "REVE", ]
+plot(mount_revelstoke)
+saveRDS(mount_revelstoke,file ="data/old/mount_revelstoke.rds")
+
+pacific_rim <- BCpolygon[BCpolygon$CLAB_ID == "PRIM", ]
+plot(pacific_rim)
+saveRDS(pacific_rim,file ="data/old/pacific_rim.rds")
+
+glacier <- BCpolygon[BCpolygon$CLAB_ID == "GLAC", ]
+plot(glacier)
+saveRDS(glacier,file ="data/old/glacier.rds")
+
+# MB
+
+wapusk <- MBpolygon[MBpolygon$CLAB_ID == "WAPU", ]
+plot(wapusk)
+saveRDS(wapusk,file ="data/old/wapusk.rds")
+
+# no polygon for prince of wales fort
+
+# NB
+
+fundy <- NBpolygon[NBpolygon$CLAB_ID == "FUND", ]
+plot(fundy)
+saveRDS(fundy,file ="data/old/fundy.rds")
+
+kouchibouguac <- NBpolygon[NBpolygon$CLAB_ID == "KOUC", ]
+plot(kouchibouguac)
+saveRDS(kouchibouguac,file ="data/old/kouchibouguac.rds")
+
+# NL
+
+terra_nova <- NLpolygon[NLpolygon$CLAB_ID == "NOVA", ]
+plot(terra_nova)
+saveRDS(terra_nova,file ="data/old/terra_nova.rds")
+
+# NS
+
+kejimkujik <- NSpolygon[NSpolygon$CLAB_ID == "KEJI", ]
+plot(kejimkujik)
+saveRDS(kejimkujik,file ="data/old/kejimkijik.rds")
+
+# no polygon on sable island
+
+# NT
+
+aulavik <- NTpolygon[NTpolygon$CLAB_ID == "AULA", ]
+plot(aulavik)
+saveRDS(aulavik,file ="data/old/aulavik.rds")
+
+nahanni <- NTpolygon[NTpolygon$CLAB_ID == "NAHA", ]
+plot(nahanni)
+saveRDS(nahanni,file ="data/old/nahanni.rds")
+
+# no polygon for grizzly bear
+
+# no NU parks in my data
+
+#ON
+
+fathom_five <- ONpolygon[ONpolygon$CLAB_ID == "FIVE", ]
+plot(fathom_five)
+saveRDS(fathom_five,file ="data/old/fathom_five.rds")
+
+point_pelee <- ONpolygon[ONpolygon$CLAB_ID == "PELE", ]
+plot(point_pelee)
+saveRDS(point_pelee,file ="data/old/point_pelee.rds")
+
+georgian_bay_islands <- ONpolygon[ONpolygon$CLAB_ID == "GBIS", ]
+plot(georgian_bay_islands)
+saveRDS(georgian_bay_islands,file ="data/old/georgian_bay_islands.rds")
+
+thousand_islands <- ONpolygon[ONpolygon$CLAB_ID == "THIS", ]
+plot(thousand_islands)
+saveRDS(thousand_islands,file ="data/old/thousand_islands.rds")
+
+# no polygon for bruce peninsula
+
+# PE
+
+prince_edward_island <- PEpolygon[PEpolygon$CLAB_ID == "PEIS", ]
+plot(prince_edward_island)
+saveRDS(prince_edward_island,file ="data/old/prince_edward_island.rds")
+
+# QC
+
+forillon <- QCpolygon[QCpolygon$CLAB_ID == "FORI", ]
+plot(forillon)
+saveRDS(forillon,file ="data/old/forillon.rds")
+
+# SK
+
+prince_albert <- SKpolygon[SKpolygon$CLAB_ID == "PALB", ]
+plot(prince_albert)
+saveRDS(prince_albert,file ="data/old/prince_albert.rds")
+
+# YT
+
+ivvavik <- YTpolygon[YTpolygon$CLAB_ID == "IVVA", ]
+plot(ivvavik)
+saveRDS(ivvavik,file ="data/old/ivvavik.rds")
+
+# 5 parks do not have polygons
+```
+
+Using the 25 parks, we plotted a map to visualise all the study sites across the country. 
+
+```{r study site map, echo = TRUE}
+# new map ----
+
+# import coordinates of all national parks, coordinates obtained from Google Maps
+park_coordinates <- read.csv("data/park_coordinates.csv")
+
+# remove the dropped parks x5
+parks_to_drop <- c("Grasslands National Park of Canada", "Bruce Peninsula National Park of Canada", "Prince of Wales Fort National Historic Site of Canada", "Saoy\\xfa-?ehdacho National Historic Site of Canada", "Sable Island National Park Reserve", "Fort Walsh National Historic Site of Canada")
+
+new_park_coordinates <- subset(park_coordinates, !(park %in% parks_to_drop))
+
+# match coordinates name to park ID
+new_park_coordinates$park[new_park_coordinates$park == "Banff National Park of Canada"]<- "BANF"
+new_park_coordinates$park[new_park_coordinates$park == "Pacific Rim National Park Reserve of Canada"]<- "PRIM"
+new_park_coordinates$park[new_park_coordinates$park == "Waterton Lakes National Park of Canada"]<- "WATE"
+new_park_coordinates$park[new_park_coordinates$park == "Kejimkujik National Park and National Historic Site of Canada"]<- "KEJI"
+new_park_coordinates$park[new_park_coordinates$park == "Jasper National Park of Canada"]<- "JASP"
+new_park_coordinates$park[new_park_coordinates$park == "Forillon National Park of Canada"]<- "FORI"
+new_park_coordinates$park[new_park_coordinates$park == "Prince Albert National Park of Canada"]<- "PALB"
+new_park_coordinates$park[new_park_coordinates$park == "Kootenay National Park of Canada"]<- "KOOT"
+new_park_coordinates$park[new_park_coordinates$park == "Glacier National Park of Canada"]<- "GLAC"
+new_park_coordinates$park[new_park_coordinates$park == "Wapusk National Park of Canada"]<- "WAPU"
+new_park_coordinates$park[new_park_coordinates$park == "Yoho National Park of Canada"]<- "YOHO"
+new_park_coordinates$park[new_park_coordinates$park == "Terra Nova National Park of Canada"]<- "NOVA"
+new_park_coordinates$park[new_park_coordinates$park == "Mount Revelstoke National Park of Canada"]<- "REVE"
+new_park_coordinates$park[new_park_coordinates$park == "Elk Island National Park of Canada"]<- "ELKI"
+new_park_coordinates$park[new_park_coordinates$park == "Georgian Bay Islands National Park of Canada"]<- "GBIS"
+new_park_coordinates$park[new_park_coordinates$park == "Point Pelee National Park of Canada"]<- "PELE"
+new_park_coordinates$park[new_park_coordinates$park == "Thousand Islands National Park of Canada"]<- "THIS"
+new_park_coordinates$park[new_park_coordinates$park == "Wood Buffalo National Park of Canada"]<- "WOOD"
+new_park_coordinates$park[new_park_coordinates$park == "Prince Edward Island National Park of Canada"]<- "PEIS"
+new_park_coordinates$park[new_park_coordinates$park == "Ivvavik National Park of Canada"]<- "IVVA"
+new_park_coordinates$park[new_park_coordinates$park == "Kouchibouguac National Park of Canada"]<- "KOUC"
+new_park_coordinates$park[new_park_coordinates$park == "Fundy National Park of Canada"]<- "FUND"
+new_park_coordinates$park[new_park_coordinates$park == "Nahanni National Park Reserve of Canada"]<- "NAHA"
+new_park_coordinates$park[new_park_coordinates$park == "Aulavik National Park of Canada"]<- "AULA"
+new_park_coordinates$park[new_park_coordinates$park == "Fathom Five National Marine Park of Canada"]<- "FIVE"
+
+
+# convert coordinates into spatial data
+new_park_location <- SpatialPoints(new_park_coordinates[, c("longitude", "latitude")])
+
+parks_sf <- st_as_sf(new_park_coordinates, coords = c("longitude", "latitude"), crs = 4326)
+
+#define the crs
+esri_102001 <- st_crs("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
+
+# reproject parks coordinate
+parks_esri <- st_transform(parks_sf, crs = esri_102001)
+
+#convert back to dataframe 
+parks_esri_df <- st_drop_geometry
+
+#convert to coordinates
+coordinates <- st_coordinates(parks_esri)
+
+# combine reprojected esri coordinates into original coordinates df
+park_coordinates_esri <- cbind(coordinates, new_park_coordinates)
+
+# renaming the columns
+names(park_coordinates_esri)[1] <- "esri_long"
+names(park_coordinates_esri)[2] <- "esri_lat"
+```
+
+
+```{r downloading Canada province map, eval = FALSE}
+# Canada map ----
+#level 0 = country; level 1 = province/state; level 2 = counties
+provinces <- gadm(country="Canada", level=1, path = tempdir())
+
+#save as an RDS
+saveRDS(provinces,file ="data/shapefiles/CAprovinces_map.rds")
+
+provinces <- readRDS("data/shapefiles/CAprovinces_map.rds")
+```
+```{r echo = TRUE}
+#plot both shape files, layered
+plot(provinces)
+
+# import ndvi file
+ndvi_bg <- "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2021ndvi/2021_jun/VIIRS-Land_v001-preliminary_NPP13C1_S-NPP_20210630_c20220419155820.nc"
+ndvi_bg <- terra::rast(ndvi_bg) #bg is 2021 jun 30
+plot(ndvi_bg$NDVI)
+```
+
+
+```{r reproject, eval = FALSE}
+# reproject NDVI to provinces crs
+reprojected_bg <- terra::project(ndvi_bg,
+                                 provinces,
+                                 method = "near")
+
+#crop reprojected ndvi bg to Can shape
+cropped_provinces_ndvi <- crop(reprojected_bg, provinces, mask = TRUE) 
+provinces_bg <- cropped_provinces_ndvi$NDVI
+saveRDS(provinces_bg,file ="figures/old_figures/Canmap.rds")
+provinces_bg <- readRDS("figures/old_figures/Canmap.rds")
+```
+
+```{r}
+
+#find the extent of the raster
+ext(provinces_bg)
+
+#set the bounding box
+bbox <- ext(c(-141.006866, -52.6000041603337, 41.6999988824795, 83.0999985311861))
+
+#crop the ndvi
+bg_crop <- crop(provinces_bg, bbox)
+
+#write raster
+writeRaster(bg_crop, "figures/old_figures/bg_crop.tif", overwrite = TRUE)
+```
+
+
+```{r reproject to ESRI:102001, eval = FALSE}
+#REPROJECT BG_CROP 
+bg_reproject <- terra::project(bg_crop,
+                               "ESRI:102001")
+```
+```{r preparation for map, echo = TRUE}
+plot(bg_crop)
+saveRDS(bg_crop,file ="figures/old_figures/bg_crop.rds")
+
+#crop the map
+Can_crop <- crop(provinces, bbox)
+saveRDS(Can_crop,file ="figures/old_figures/Can_crop.rds")
+Can_crop <- readRDS("figures/old_figures/Can_crop.rds")
+
+plot(Can_crop)
+
+# Define manual color scale due to adding national parks ----
+manual_colors <- c("WATE"= "#560133", "ELKI" = "#790149", "JASP" = "#9F0162", "WOOD" = "#C7007C",
+                   "BANF" = "#EF0096", "YOHO" = "#FF5AAF", "KOOT" = "#FF9DCB", "REVE" = "#FFCFF2",
+                   "PRIM" = "#450270", "GLAC" = "#65019F", "WAPU" = "#8400CD", "FUND" = "#A700FC",
+                   "KOUC" = "#DA00FD", "NOVA" = "#FF3CFE", "KEJI" = "#FF92FD", "AULA" = "#FFCCFE",
+                   "NAHA" = "#5A000F", "FIVE" = "#7E0018", "PELE" = "#A40122", "GBIS" = "#CD022D",
+                   "THIS" = "#F60239", "PEIS" = "#FF6E3A", "FORI" = "#FFAC3B", "PALB" = "#FFDC3D", "IVVA" = "#FF4C30")
+
+
+
+# Plotting the map 
+provinces_sf <- st_as_sf(Can_crop)
+```
+
+```{r map, echo = TRUE}
+
+#NDVI colour palette
+NDVI_cols <- colorRampPalette(rev(c("#0f2902", "#1d3900","#193401","#274009","#2e4511",
+                                    "#3d4f21", "#485921","#536321","#69761f","#868924",
+                                    "#8d8e37","#aaa263","#b5a975","#c2b58c","#c7b995",
+                                    "#cdbf9f","#e3d6c6","#e7dbce")))
+#plot map withESRI:102001 projection
+reprojected_new_map <- 
+  ggplot() +
+  geom_spatraster(data = bg_reproject, alpha = 0.8, maxcell = 5e+08) + #ndvi bg
+  scale_fill_gradientn(name = "Normalized Difference Vegetation Index",
+                       colours = NDVI_cols(255),
+                       na.value = NA,
+                       breaks = c(11,  63.75, 127.50, 191.25, 254.00),
+                       labels = c(-1.0, -0.5,  0.0,  0.5,  1.0)) +
+  geom_sf(data = provinces_sf, fill = "transparent", color = "black", size = 1) + #map
+  geom_point(data = park_coordinates_esri, aes(x = esri_long, y = esri_lat, col = park, shape = park), 
+             size = 3, alpha = 0.8) +
+  guides(col = guide_legend(override.aes = list(alpha=0.8,
+                                                shape = rep(17,25))),
+         shape = "none", alpha = "none") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  scale_shape_manual(values = rep(17,25)) +
+  theme(
+    panel.background = element_rect(fill="transparent"), #transparent panel bg
+    plot.background = element_rect(fill="transparent", color=NA), #transparent plot bg
+    panel.grid.major = element_blank(), #remove major gridlines
+    panel.grid.minor = element_blank(),
+    axis.text.x=element_blank(), 
+    axis.ticks.x=element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.y=element_blank(), 
+    axis.ticks.y=element_blank(),
+    axis.title.y = element_blank(),
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 11),
+    legend.position = "none",
+    legend.justification = "center",
+    legend.direction = "vertical",
+    #legend.box.background = element_rect(color = "black"),
+    plot.margin = unit(c(-1,0,-1,0), "cm"),
+    plot.title = element_text(vjust = -8.5, hjust = 0.03,
+                              size = 30, family = "sans", face = "bold")) +
+  coord_sf() # ensures points don't get jittered around when figure dimensions change
+
+ggsave(reprojected_new_map, filename = "figures/new_map_reprojected.png", width = 6.86, height = 6, units = "in", dpi = 600, background ="transparent")
+
+
+```
+We obtained daily ADVRR NDVI data of 5km resolution between 2010-2021 from the NOAA Climate Data Record. 
+
+```{r downloading NDVI from 2010-2021, eval = FALSE}
+# loop for extracting all links for 2010 ----
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2010/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2010ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+
+#test the files to see if they can plot ndvi 
+file1 <- "2010ndvi/2010_jan/AVHRR-Land_v005_AVH13C1_NOAA-19_20100101_c20170406091314.nc"
+file2 <- "2010ndvi/2010_dec/AVHRR-Land_v005_AVH13C1_NOAA-19_20101231_c20170406211535.nc"
+NDVI <- terra::rast(file1)
+plot(NDVI$NDVI) 
+
+# download 2011-2021 data ----
+# loop for extracting all links for 2011 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2011/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2011ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2012 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2012/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2012ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2013 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2013/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2013ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2014 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2014/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2014ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2015 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2015/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2015ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2016 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2016/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2016ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2017 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2017/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2017ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2018 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2018/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2018ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2019 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2019/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2019ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2020 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2020/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2020ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for extracting all links for 2021 ---- 
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2021/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2021ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+```
+The NDVI data was cropped to the boundaries of each park, and their monthly means were taken.
+
+```{r for loop for cropping 2010-2021 NDVI, eval = FALSE}
+# for loop for cropping all the ndvi data into the park polygons and take monthly mean
+nc.year_dir <- "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/ndvi"
+# setwd(nc.year_dir)
+
+# import all of the boundaries for Canadian parks
+CAshape <- st_read("data/shapefiles/ca_provinces/CLAB_CA_2023-09-08")
+
+# Create a list of the names of the 25 parks to be studied 
+test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
+                "BANF", "YOHO", "KOOT", "REVE",
+                "PRIM", "GLAC", "WAPU", "FUND",
+                "KOUC", "NOVA", "KEJI", "AULA",
+                "NAHA", "FIVE", "PELE", "GBIS",
+                "THIS", "PEIS", "FORI", "PALB", "IVVA")
+
+
+# import JASP shapefile
+jasper_shape <- readRDS("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/shapefiles/parks_polygons/jasper.rds")
+
+# Define the CRS
+CRS_canada <- crs(jasper_shape)
+
+# List all year folders in the ndvi directory 
+year_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FALSE)
+
+RESULTS <- list()
+
+# Loop through each year folder
+for (i in 1:length(year_folders)) { #length(year_folders)
+  
+  year <- gsub(pattern = "ndvi",
+               replacement = "",
+               x = gsub(pattern = "data/ndvi/",
+                        replacement = "",
+                        x = year_folders[i]))
+  
+  # List all month folders in the year folder
+  month_folders <- list.dirs(path = year_folders[i],
+                             full.names = TRUE,
+                             recursive = FALSE)
+  
+  # Generate an empty list for storing daily results
+  res_month <- list()
+  
+  # Loop through each month folder
+  for (j in 1:length(month_folders)) {
+    
+    # Make a list of the files in the month directory
+    nc.files <- list.files(path = month_folders[j],
+                           pattern = "*.nc",
+                           full.names = TRUE)
+    
+    # Generate an empty list for storing daily results
+    res_day <- list()
+    
+    # Loop through all the ndvi files for the current month
+    for (k in 1:length(nc.files)) {
+      
+      
+      # make the spatrasters
+      spat <- rast(nc.files[k]) 
+      spat <- spat[[which(names(spat) == "NDVI")]]
+      
+      # Reproject the raster to the CRS of jasper_shape
+      reprojected_spat <- terra::project(spat,
+                                         CRS_canada,
+                                         method = "near")
+      
+      # Generate an empty list for storing results
+      res <- list()
+      
+      #Loop over the vector of park names to extract the NDVI information
+      for(l in 1:length(test_parks)){
+        
+        #Extract the desired park contour
+        PARK <- CAshape[CAshape$CLAB_ID %in% test_parks[l],]
+        
+        # crop the NDVI raster to the park
+        cropped_spat <- crop(reprojected_spat, PARK, mask = TRUE) 
+        
+        # Get mean and variance in NDVI
+        NDVI <- mean(values(cropped_spat), na.rm = TRUE)
+        #NDVI_var <- var(cropped_spat)
+        NDVI_var <- var(values(cropped_spat), na.rm = TRUE)
+        
+        # Store as a data frame in the list
+        res[[l]] <- data.frame(park = test_parks[l],
+                               date = paste(year,j,k,sep = "_"),
+                               ndvi = NDVI,
+                               ndvi_var = NDVI_var)
+        
+      } #close the loop over parks
+      
+      #clean up the results over the days of the month
+      res_day[[k]] <- do.call(rbind,res) 
+      
+      
+    } #close of day loop
+    
+    #clean up the results over the months of the year
+    res_month[[j]] <- do.call(rbind,res_day) 
+    
+  } # close of the month loop
+  
+  #clean up the results over the months of the year
+  RESULTS[[i]] <- do.call(rbind,res_month) 
+} # close of year loop
+
+# convert the final list to a data frame (daily ndvi mean and var)
+RESULTS <- do.call(rbind,RESULTS) 
+
+#save as CSV
+write.csv(RESULTS, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/parksndvi.csv", row.names=FALSE)
+RESULTS_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/parksndvi.csv")
+
+# close loop of all the years 
+```
+We scaled the NDVI values to positive using the formula (monthly mean NDVI + 1)/2 for modelling. We built a generalized additive model (GAM) with a beta distribution using the mgcv R package, with parks as a fixed effect, and month and park, year and park, and the interaction between month and year as smooth terms to understand the changes in NDVI based on these variables.
+
+```{r GAM for 2010-2021 NDVI, echo = TRUE}
+# results dataframe (2010-2021)---- 
+
+#Create data frame by grouping park means according to months and years
+#convert to calendar dates
+RESULTS_df$date <- as.Date(RESULTS_df$date, format = "%Y_%m_%d")
+
+#extract year
+RESULTS_df$year <- lubridate::year(RESULTS_df$date)
+
+#extract month
+RESULTS_df$month <- lubridate::month(RESULTS_df$date)
+
+#rename columns
+names(RESULTS_df)[3] <- "ndvi_daily_mean"
+names(RESULTS_df)[4] <- "ndvi_daily_variance"
+
+# Create a new dataframe for analysis for monthly ndvi mean to be grouped by park and year
+data_ndvi_mean <- aggregate(ndvi_daily_mean ~ month + year + park, data = RESULTS_df, FUN = mean, na.rm = TRUE)
+
+#rename columns
+names(data_ndvi_mean)[4] <- "ndvi_monthly_mean"
+
+#save datafram as a csv
+write.csv(data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/monthly_mean_ndvi.csv", row.names=FALSE)
+mean_ndvi_df <- read.csv("data/models/model_results/monthly_mean_ndvi.csv")
+
+# rescale ndvi in dataframe to 0-1 for beta gam
+mean_ndvi_df <- mean_ndvi_df %>% 
+  mutate((ndvi_monthly_mean+1)/2)
+
+# rename columns 
+names(mean_ndvi_df)[5] <- "scaled_mean_ndvi"
+
+# change month and year to numeric
+as.numeric(mean_ndvi_df$month)
+as.numeric(mean_ndvi_df$year)
+```
+
+
+```{r GAM for 2010-2021 NDVI cont., eval = FALSE}
+# gam for 2010-2021 ndvi ----
+# GAM
+ndvi2010_2021_gam <-
+  gam(
+    scaled_mean_ndvi ~ #scale ndvi from 0 to 1 to fit beta distribution
+      # fixed effects
+      park +
+      # global smooths
+      s(month, bs = "cc", k = 4) + #month effect
+      s(year, k = 8) + #year effect
+      ti(month, year, k = 6), #month/ year interaction
+    family = "betar",
+    #beta location scale distribution for the data
+    data = mean_ndvi_df,
+    method = 'fREML'
+  )
+```
+
+
+```{r cont. GAM for 2010-2021 NDVI, echo = TRUE}
+summary(ndvi2010_2021_gam)
+plot(ndvi2010_2021_gam, pages = 1)
+
+# residuals of model 1
+residuals(ndvi2010_2021_gam)
+
+# add the residuals as a new column into the HWI_grouped_species dataframe ----
+mean_ndvi_df$residuals <- residuals(ndvi2010_2021_gam)
+
+# looking at the distribution of the residuals 
+hist(mean_ndvi_df$residuals)
+```
+
+Since there wasn't enough data for modelling, we downloaded 10 more years of daily ADVRR NDVI data of 5km resolution for 2000-2009 and repeated the same procedures to enlarge the dataset for our NDVI GAM.
+
+```{r downloading daily NDVI for 2000-2009, eval = FALSE}
+# extracting all links for 2000-2009 ---- 
+# loop for 2000
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2000/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2000ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2001
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2001/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2001ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2002
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2002/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2002ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> then probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2003
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2003/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2003ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2004
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2004/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2004ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+
+# loop for 2005
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2005/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2005ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2006
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2006/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2006ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2007
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2007/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2007ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2008
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2008/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2008ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+
+# loop for 2009
+url <- "https://www.ncei.noaa.gov/data/land-normalized-difference-vegetation-index/access/2009/"
+pg <- read_html(url)
+linkys <- html_attr(html_nodes(pg, "a"), "href")
+
+LINKS <- list()
+for(i in 1:length(linkys)){
+  link <- paste(url, linkys[i], sep = "")
+  LINKS[i] <- link
+}
+
+LINKS <- do.call(rbind, LINKS)
+
+for(j in 6:length(linkys)){
+  url_path <- paste(url, linkys[j], sep = "")
+  path <- paste("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/ndvi/2009ndvi/",linkys[j], sep="")
+  try(download.file(url_path, destfile = path, mode = "wb")) #add mode = wb and now it works --> the probably won't have to run corrupt file unless things don't work
+  
+  Sys.sleep(5)
+  
+}
+```
+```{r for loop for cropping 2000-2009 NDVI to park polygons and taking monthly mean, eval = FALSE}
+# cropping the ndvi to parks and taking mean monthly ndvi for 2000-2009 ----
+
+nc.year_dir <- "data/ndvi/ndvi00-09"
+# setwd(nc.year_dir)
+
+# import all of the boundaries for Canadian parks
+CAshape <- st_read("data/shapefiles/ca_provinces/CLAB_CA_2023-09-08")
+
+# Create a list of the names of the 25 parks to be studied 
+test_parks <- c("WATE", "ELKI", "JASP", "WOOD",
+                "BANF", "YOHO", "KOOT", "REVE",
+                "PRIM", "GLAC", "WAPU", "FUND",
+                "KOUC", "NOVA", "KEJI", "AULA",
+                "NAHA", "FIVE", "PELE", "GBIS",
+                "THIS", "PEIS", "FORI", "PALB", "IVVA")
+
+
+# import JASP shapefile
+jasper_shape <- readRDS("data/shapefiles/parks_polygons/jasper.rds")
+
+# Define the CRS
+CRS_canada <- crs(jasper_shape)
+
+# List all year folders in the ndvi directory 
+year_folders <- list.dirs(path = nc.year_dir, full.names = TRUE, recursive = FALSE)
+
+RESULTS_2 <- list()
+
+# Loop through each year folder
+for (i in 1:length(year_folders)) { 
+  
+  year <- gsub(pattern = "ndvi",
+               replacement = "",
+               x = gsub(pattern = "data/ndvi/ndvi00-09/",
+                        replacement = "",
+                        x = year_folders[i]))
+  
+  # List all month folders in the year folder
+  month_folders <- list.dirs(path = year_folders[i],
+                             full.names = TRUE,
+                             recursive = FALSE)
+  
+  # Generate an empty list for storing daily results
+  res_month <- list()
+  
+  # Loop through each month folder
+  for (j in 1:length(month_folders)) {
+    
+    # Make a list of the files in the month directory
+    nc.files <- list.files(path = month_folders[j],
+                           pattern = "*.nc",
+                           full.names = TRUE)
+    
+    # Generate an empty list for storing daily results
+    res_day <- list()
+    
+    # Loop through all the ndvi files for the current month
+    for (k in 1:length(nc.files)) {
+      
+      
+      # make the spatrasters
+      spat <- rast(nc.files[k]) 
+      spat <- spat[[which(names(spat) == "NDVI")]]
+      
+      # Reproject the raster to the CRS of jasper_shape
+      reprojected_spat <- terra::project(spat,
+                                         CRS_canada,
+                                         method = "near")
+      
+      # Generate an empty list for storing results
+      res <- list()
+      
+      #Loop over the vector of park names to extract the NDVI information
+      for(l in 1:length(test_parks)){
+        
+        #Extract the desired park contour
+        PARK <- CAshape[CAshape$CLAB_ID %in% test_parks[l],]
+        
+        # crop the NDVI raster to the park
+        cropped_spat <- crop(reprojected_spat, PARK, mask = TRUE) 
+        
+        # Get mean and variance in NDVI
+        NDVI <- mean(values(cropped_spat), na.rm = TRUE)
+        #NDVI_var <- var(cropped_spat)
+        NDVI_var <- var(values(cropped_spat), na.rm = TRUE)
+        
+        # Store as a data frame in the list
+        res[[l]] <- data.frame(park = test_parks[l],
+                               date = paste(year,j,k,sep = "_"),
+                               ndvi = NDVI,
+                               ndvi_var = NDVI_var)
+        
+      } #close the loop over parks
+      
+      #clean up the results over the days of the month
+      res_day[[k]] <- do.call(rbind,res) 
+      
+      
+    } #close of day loop
+    
+    #clean up the results over the months of the year
+    res_month[[j]] <- do.call(rbind,res_day) 
+    
+  } # close of the month loop
+  
+  #clean up the results over the months of the year
+  RESULTS_2[[i]] <- do.call(rbind,res_month) 
+} # close of year loop
+
+#SAVE AS RDA OR CSV
+save(RESULTS_2, file = "test.rda")
+
+# convert the final list to a data frame (daily ndvi mean and var)
+RESULTS_2 <- do.call(rbind,RESULTS_2) 
+
+write.csv(RESULTS_2, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/morendvi.csv", row.names=FALSE)
+RESULTS2_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/morendvi.csv")
+
+# close loop of all the years 
+
+```
+```{r formatting the cropped 2000-2009 NDVI data and merging with 2010-2021 NDVI, eval = FALSE}
+#Create data frame by grouping park means according to months and years ---- 
+
+#convert to calendar dates
+RESULTS2_df$date <- as.Date(RESULTS2_df$date, format = "%Y_%m_%d")
+
+#extract year
+RESULTS2_df$year <- lubridate::year(RESULTS2_df$date)
+
+#extract month
+RESULTS2_df$month <- lubridate::month(RESULTS2_df$date)
+
+#rename columns
+names(RESULTS2_df)[3] <- "ndvi_daily_mean"
+names(RESULTS2_df)[4] <- "ndvi_daily_variance"
+
+# Create a new dataframe for analysis for monthly ndvi mean to be grouped by park and year
+more_data_ndvi_mean <- aggregate(ndvi_daily_mean ~ month + year + park, data = RESULTS2_df, FUN = mean, na.rm = TRUE)
+
+#rename columns
+names(more_data_ndvi_mean)[4] <- "ndvi_monthly_mean"
+
+#save datafram as a csv
+write.csv(more_data_ndvi_mean, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/more_monthly_mean_ndvi.csv", row.names=FALSE)
+more_mean_ndvi_df <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/more_monthly_mean_ndvi.csv")
+
+# preparing for GAM ----
+# rescale ndvi in dataframe
+more_mean_ndvi_df <- more_mean_ndvi_df %>% 
+  mutate((ndvi_monthly_mean+1)/2)
+
+# rename columns 
+names(more_mean_ndvi_df)[5] <- "scaled_mean_ndvi"
+
+# change month and year to numeric
+as.numeric(more_mean_ndvi_df$month)
+as.numeric(more_mean_ndvi_df$year)
+
+# merge to form data frame with 2000-2021 data frame ----
+NDVI_2000_2021 <- rbind(more_mean_ndvi_df,mean_ndvi_df)
+
+#save datafram as a csv
+write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021.csv", row.names=FALSE)
+NDVI_2000_2021 <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021.csv")
+```
+```{r eval = TRUE}
+
+
+#Convert PARK ID to a factor
+NDVI_2000_2021$park <- as.factor(NDVI_2000_2021$park)
+
+```
+```{r GAM for 2000-2021 NDVI, eval = FALSE}
+# NDVI & parks GAM! ----
+
+# BAM in parks, month, year
+# predicts NDVI from 2000-2021 (based on these variables how do they affect NDVI)
+# looks at NDVI changes
+all_ndvi_gam <-
+  bam(
+    scaled_mean_ndvi ~ #scale ndvi from 0 to 1 to fit beta distribution
+      # fixed effects
+      park +
+      # global smooths
+      s(month, park, bs = "fs", k = 8, xt = list(bs = "cc")) + #based on month and park
+      s(year, park, bs = "fs", k = 8) + #based on year and park 
+      ti(month, year, k = 6), #based on month and year 
+    family = "betar",
+    #beta location scale distribution for the data
+    data = NDVI_2000_2021,
+    method = 'fREML'
+  )
+
+saveRDS(all_ndvi_gam, file= "data/models/all_ndvi_gam")
+all_ndvi_gam <- readRDS("data/models/all_ndvi_gam")
+
+```
+```{r echo = TRUE}
+summary(all_ndvi_gam)
+bam_plot <- plot(all_ndvi_gam, pages = 1, scheme = 2)
+
+
+# residuals of model 1
+residuals(all_ndvi_gam)
+
+# add the residuals as a new column into the HWI_grouped_species dataframe ----
+NDVI_2000_2021$residuals <- residuals(all_ndvi_gam)
+
+#save dataframe as a csv
+write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual.csv", row.names=FALSE)
+NDVI_2000_2021_residuals <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual.csv")
+
+# looking at the distribution of the residuals 
+hist(NDVI_2000_2021$residuals)
+
+# add a year_month column ----
+# Create a new column combining year, month, and day
+NDVI_2000_2021$date <- as.Date(paste(NDVI_2000_2021$year, NDVI_2000_2021$month, 1, sep="-"))
+
+# Create a new column for year and month combination
+NDVI_2000_2021$year_month <- format(NDVI_2000_2021$date, "%Y-%m")
+
+# Convert the date column to Date format if necessary
+NDVI_2000_2021$date <- as.Date(NDVI_2000_2021$date)
+
+#save datafram as a csv
+write.csv(NDVI_2000_2021, "C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual_date.csv", row.names=FALSE)
+all_ndvi <- read.csv("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/models/model_results/NDVI_2000_2021_residual_date.csv")
+
+
+#plot the trend of residuals by year_month ----
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = all_ndvi, aes(x = year_month, y = residuals, col = park)) +
+  #scale_x_continuous(limits = c(2010,2021), expand = c(0,1)) +
+  scale_colour_manual(name="Region",
+                     values = manual_colors) +
+  xlab("Time") +
+  ylab("Residuals") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+
+```
+```{r other visualisation of NDVI trends in Banff National Park, echo = TRUE}
+#NDVI trends in individual parks ----
+
+#BANF ----
+Banff_NDVI <- all_ndvi %>% 
+  filter(park %in% c("BANF"))
+
+banf_ndvi <- 
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = Banff_NDVI, aes(x = year, y = ndvi_monthly_mean, col = park), alpha = 0.4) +
+  geom_smooth(data = Banff_NDVI, aes(x = year, y = ndvi_monthly_mean, col = park),
+              method = "lm",
+              se = T)  +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  xlab("Time") +
+  ylab("Monthly Mean NDVI") +
+  scale_y_continuous(limits = c(0, 0.25), expand = c(0,0.01))+
+  scale_x_continuous(limits = c(2000, 2021), expand = c(0,0.01),
+                     breaks = c(2000,2005,2010,2015,2020),
+                     labels = c(2000,2005,2010,2015,2020))+
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "none",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm")) 
+  
+ggsave(banf_ndvi, filename = "figures/case_study_banff/banf_ndvi_trend.png", width = 6, height = 4, units = "in", dpi = 600, background = "white")
+```
+We then merged the NDVI data with the HWI data.
+
+```{r merging 2000-2021 NDVI (residuals from 2010-2021) with 2010-2021 HWI data, echo = TRUE}
+# matching park IDs in HWI data to NDVI data----
+HWI_parks$park[HWI_parks$park == "Banff"]<- "BANF"
+HWI_parks$park[HWI_parks$park == "Pacific_Rim"]<- "PRIM"
+HWI_parks$park[HWI_parks$park == "Waterton_Lakes"]<- "WATE"
+HWI_parks$park[HWI_parks$park == "Kejimkujik"]<- "KEJI"
+HWI_parks$park[HWI_parks$park == "Jasper"]<- "JASP"
+HWI_parks$park[HWI_parks$park == "Forillon"]<- "FORI"
+HWI_parks$park[HWI_parks$park == "Prince_Albert"]<- "PALB"
+HWI_parks$park[HWI_parks$park == "Kootenay"]<- "KOOT"
+HWI_parks$park[HWI_parks$park == "Glacier"]<- "GLAC"
+HWI_parks$park[HWI_parks$park == "Wapusk"]<- "WAPU"
+HWI_parks$park[HWI_parks$park == "Yoho"]<- "YOHO"
+HWI_parks$park[HWI_parks$park == "Terra_Nova"]<- "NOVA"
+HWI_parks$park[HWI_parks$park == "Mount_Revelstoke"]<- "REVE"
+HWI_parks$park[HWI_parks$park == "Elk_Island"]<- "ELKI"
+HWI_parks$park[HWI_parks$park == "Georgian_Bay_Islands"]<- "GBIS"
+HWI_parks$park[HWI_parks$park == "Point_Pelee"]<- "PELE"
+HWI_parks$park[HWI_parks$park == "Thousand_Islands"]<- "THIS"
+HWI_parks$park[HWI_parks$park == "Wood_Buffalo"]<- "WOOD"
+HWI_parks$park[HWI_parks$park == "Prince_Edward_Island"]<- "PEIS"
+HWI_parks$park[HWI_parks$park == "Ivvavik"]<- "IVVA"
+HWI_parks$park[HWI_parks$park == "Kouchibouguac"]<- "KOUC"
+HWI_parks$park[HWI_parks$park == "Fundy"]<- "FUND"
+HWI_parks$park[HWI_parks$park == "Nahanni"]<- "NAHA"
+HWI_parks$park[HWI_parks$park == "Aulavik"]<- "AULA"
+HWI_parks$park[HWI_parks$park == "Fathom_Five"]<- "FIVE"
+
+# drop parks without polygons ----
+HWI_dropped <- subset(HWI_parks, park %in% c("WATE", "ELKI", "JASP", "WOOD",
+                                             "BANF", "YOHO", "KOOT", "REVE",
+                                             "PRIM", "GLAC", "WAPU", "FUND",
+                                             "KOUC", "NOVA", "KEJI", "AULA",
+                                             "NAHA", "FIVE", "PELE", "GBIS",
+                                             "THIS", "PEIS", "FORI", "PALB", "IVVA"))
+
+# merging HWI and NDVI 2000-2021 dataframes ----
+HWI_NDVI <- merge(all_ndvi, HWI_dropped, by = c("park", "month", "year"))
+
+# new data frame with aggregate by HWI number 
+hwi_ndvi <- aggregate(HWI ~ month + year + park + ndvi_monthly_mean + scaled_mean_ndvi + residuals, data = HWI_NDVI, FUN = "length")
+
+# creating a year_month column
+hwi_ndvi$year_month <- paste(hwi_ndvi$year, hwi_ndvi$month, sep = "-")
+
+# save the data frame
+saveRDS(hwi_ndvi,file ="data/hwi_ndvi.rds")
+
+```
+
+```{r more visualisations of HWI and NDVI trends, echo = TRUE}
+# visualise HWI with NDVI residuals ----
+ggplot() +
+  geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_point(data = hwi_ndvi, aes(x = residuals, y = HWI, col = park)) +
+  xlab("Residuals") +
+  ylab("HWI") +
+  scale_y_log10() +
+  scale_colour_manual(name="Region",
+                      values = manual_colors) +
+  theme_bw() +
+  geom_vline(xintercept = 0, linetype = "solid", color = "black", size = 0.3) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+# visualise HWI over time ---- model as a gam!
+hwi_trend <-
+  ggplot() +
+  geom_point(data = hwi_ndvi, aes(x = year, y = HWI, col = park)) +
+  geom_smooth(data = hwi_ndvi, aes(x = year, y = HWI, col = park),
+              method = "gam",
+              formula = y ~ s(x, bs = "tp", k = 5),
+              method.args = list(family = "poisson"),
+              se = F) +
+  xlab("Year") +
+  ylab("Monthly HWIs") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=15, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=15, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "none",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm")) +
+  scale_y_continuous(limits = c(0, 800), expand = c(0,2))+
+  scale_x_continuous(limits = c(2010, 2021), expand = c(0,0.2),
+                     breaks = c(2010,2012,2015,2017,2020),
+                     labels = c(2010,2012,2015,2017,2020))
+
+ggsave(hwi_trend, filename = "figures/supplementary/hwi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")
+
+# monthly HWI with monthly mean NDVI
+monthly_hwi_mean_ndvi <-
+ggplot() +
+  geom_point(data = hwi_ndvi, aes(x = ndvi_monthly_mean, y = HWI, col = park)) +
+  xlab("Monthly Mean NDVI") +
+  ylab("monthly HWI") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggsave(monthly_hwi_mean_ndvi, filename = "figures/supplementary/hwi_and_ndvi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")
+
+# NDVI changes over 21 years
+ndvi2000_2021 <-
+ggplot() +
+  geom_point(data = all_ndvi, aes(x = year, y = ndvi_monthly_mean, col = park), alpha = 0.1) +
+  geom_smooth(data = all_ndvi, aes(x = year, y = ndvi_monthly_mean, col = park),method = "gam", se = FALSE) +
+  xlab("Time") +
+  ylab("Monthly Mean NDVI") +
+  scale_colour_manual(name="Park",
+                      values = manual_colors) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=12, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=12, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=10, family = "sans"),
+        axis.text.x  = element_text(size=10, family = "sans"),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = unit(c(0.2,0.1,0.2,0.2), "cm"))
+
+ggsave(ndvi2000_2021, filename = "figures/supplementary/ndvi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")
+
+```
+
+We fitted a GAM with a negative binomial distribution and a log link function to describe the relationship between the monthly HWIs and the NDVI residuals between 2010-2021 in each park.
+
+```{r GAM for HWI and NDVI residuals between 2010-2021, eval = FALSE}
+# gam for HWI and NDVI residuals ----
+hwi_ndvi <- readRDS("C:/Users/grace/Documents/GitHub/HWI_NDVI_parks/data/hwi_ndvi.rds")
+
+hwi_ndvi$park <- as.factor(hwi_ndvi$park)
+
+all_parks_model <- gam(HWI ~
+                         # global smooths
+                         s(residuals, park, bs = "fs", k = 6), #month effect
+                       #weights = Weights,
+                       family = nb(link = 'log'),
+                       data = hwi_ndvi,
+                       method = "REML")
+
+saveRDS(all_parks_model,file ="data/models/all_parks_model.rds")
+save(all_parks_model, file = "data/models/all_parks_model.rda")
+```
+```{r echo = TRUE}
+summary(all_parks_model)
+```
+
+```{r plot the model results, echo = TRUE}
+
+# plot to colour code model results by park ----
+# extract the data
+parks = smooth_estimates(all_parks_model, select = "s(residuals,park)") #extract the data
+# add confidence intervals
+parks = add_confint(parks)
+# rename a value, but not necessary
+parks$smooth = 'park'
+
+# plot the results ----
+gam_plot <- 
+  ggplot(parks, aes(x = residuals)) + 
+  geom_vline(aes(xintercept = 0), col = "grey70", linetype = "dashed") +
+  geom_line(data = parks, aes(x = residuals, y = .estimate, color = park), linewidth = 0.5) +
+  # set the colors
+  scale_color_manual(name = "Park", values = manual_colors) + # c("#333BFF", "#CC6600", "#9633FF")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.y = element_text(size=15, family = "sans", face = "bold"),
+        axis.title.x = element_text(size=15, family = "sans", face = "bold"),
+        axis.text.y = element_text(size=8, family = "sans"),
+        axis.text.x  = element_text(size=8, family = "sans"),
+        legend.text  = element_text(size=8, family = "sans"),
+        legend.title  = element_text(size=8, family = "sans"),
+        legend.key.size = unit(0.35, 'cm'),
+        legend.key.height = unit(0.35, 'cm'),
+        plot.title = element_text(hjust = -0.05, size = 10, family = "sans"),
+        plot.tag = element_text(size=18, family = "sans"),
+        legend.position = "none") + 
+  scale_y_continuous(limits = c(-2, 3.5), expand = c(0,0.01))+
+  scale_x_continuous(limits = c(-2, 2), expand = c(0,0.01),
+                     breaks = c(-2, 0, 2),
+                     labels = c(-2, 0, 2))+
+  labs(x = "NDVI Residuals", y = "log(monthly HWIs)") #tag = 'a)')
+
+ggsave(gam_plot, filename = "figures/park_hwi_ndvi_trends/gam_plot.png", width = 6, height = 5, units = "in", dpi = 600)
+
+
+```
+Using the results of this model, we visualized the HWI predictions in response to NDVI residuals in each of the 25 parks with their confidence intervals to look for trends in monthly HWIs according to changing park productivity. We then calculated the inflection points in the response of each park to determine their respective NDVI residual with the most monthly HWIs. 
+
+```{r for loop to get trend and inflection point from each park, eval = FALSE}
+PARKS <- c("WATE", "ELKI", "JASP", "WOOD",
+           "BANF", "YOHO", "KOOT", "REVE",
+           "PRIM", "GLAC", "WAPU", "FUND",
+           "KOUC", "NOVA", "KEJI", "AULA",
+           "NAHA", "FIVE", "PELE", "GBIS",
+           "THIS", "PEIS", "FORI", "PALB", "IVVA")
+
+RESIDUALS <- seq(-2, 2, 0.01)
+
+RESULTS3 <- list()
+max <- list()
+for(i in 1:length(PARKS)){
+  
+  all_parks_predict <- predict(all_parks_model, newdata = data.frame(residuals = RESIDUALS,
+                                                               
+                                                               park = PARKS[i]),
+                         type = "response", # to see how HWI responds to NDVI residuals
+                         se = TRUE # standard error = true --> for looking at confidence interval
+  )
+  
+  RESULTS3[[i]] <- data.frame(park = PARKS[i],
+                                residual = RESIDUALS,
+                                prediction = all_parks_predict$fit,
+                                SE = all_parks_predict$se.fit)
+  
+  # find inflection point (max)
+  max_index <- which(RESULTS3[[i]]$prediction == max(RESULTS3[[i]]$prediction))
+  max[[i]] <- RESULTS3[[i]][max_index, ]
+  
+  
+  
+  
+}
+
+RESULTS3 <- do.call(rbind, RESULTS3)
+max <- do.call(rbind, max)
+
+saveRDS(RESULTS3, file = "data/models/model_results/RESULTS3")
+saveRDS(max, file = "data/models/model_results/max")
+```
+```{r results for each park, echo = TRUE}
+# plotting the model results for each individual park
+
+
+# AULA ----
+AULApredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "AULA"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+
+# plot the line for the park 
+plot(y = AULApredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = AULApredict$fit + 1.96*AULApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = AULApredict$fit - 1.96*AULApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "AULA"),])
+# find inflection point (max)
+which(AULApredict$fit == max(AULApredict$fit)) #401, 401
+
+
+# FUND ----
+FUNDpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "FUND"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = FUNDpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = FUNDpredict$fit + 1.96*FUNDpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = FUNDpredict$fit - 1.96*FUNDpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "FUND"),])
+# find inflection point (max)
+which(FUNDpredict$fit == max(FUNDpredict$fit)) #401, 401
+
+
+
+# KEJI ----
+
+RESIDUALS <- seq(-2, 2, 0.01)
+
+KEJIpredict <- predict(all_parks_model, newdata = data.frame(residuals = RESIDUALS,
+                                                             
+                                                             park = "KEJI"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = KEJIpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = KEJIpredict$fit + 1.96*KEJIpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = KEJIpredict$fit - 1.96*KEJIpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "KEJI"),])
+# find inflection point (max)
+which(KEJIpredict$fit == max(KEJIpredict$fit)) #401, 401
+
+
+
+# PALB ----
+PALBpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "PALB"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = PALBpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = PALBpredict$fit + 1.96*PALBpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = PALBpredict$fit - 1.96*PALBpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "PALB"),])
+# find inflection point (max)
+which(PALBpredict$fit == max(PALBpredict$fit)) #189, 189
+
+
+# THIS ----
+THISpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "THIS"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = THISpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = THISpredict$fit + 1.96*THISpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = THISpredict$fit - 1.96*THISpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "THIS"),])
+# find inflection point (max)
+which(THISpredict$fit == max(THISpredict$fit)) #401, 401
+
+
+# BANF ----
+BANFpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "BANF"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+png(file = "figures/case_study_banff/BANFF_final.png", width = 6, height = 4, units = "in", res = 600)
+# make axis title bigger
+par(cex.lab = 1.2)
+# plot the line for the park 
+plot(y = BANFpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250), xlab = "NDVI Residuals", ylab = "Monthly HWIs", col = "#EF0096", font.lab = 2)
+# upper conf interval
+lines(y = BANFpredict$fit + 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = BANFpredict$fit - 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[hwi_ndvi$park == "BANF",], pch = 16, col = alpha("#EF0096",0.3))
+# find inflection point (max)
+which(BANFpredict$fit == max(BANFpredict$fit)) #154, 154
+dev.off()
+
+# GBIS ----
+GBISpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "GBIS"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = GBISpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = GBISpredict$fit + 1.96*GBISpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = GBISpredict$fit - 1.96*GBISpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "GBIS"),])
+# find inflection point (max)
+which(GBISpredict$fit == max(GBISpredict$fit)) #1, 1
+
+
+# KOOT ----
+KOOTpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "KOOT"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = KOOTpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = KOOTpredict$fit + 1.96*KOOTpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = KOOTpredict$fit - 1.96*KOOTpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "KOOT"),])
+# find inflection point (max)
+which(KOOTpredict$fit == max(KOOTpredict$fit)) #1, 1
+
+
+# PEIS ----
+PEISpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "PEIS"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = PEISpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = PEISpredict$fit + 1.96*PEISpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = PEISpredict$fit - 1.96*PEISpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "PEIS"),])
+# find inflection point (max)
+which(PEISpredict$fit == max(PEISpredict$fit)) #266, 266
+
+
+
+# WAPU ----
+WAPUpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "WAPU"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = WAPUpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = WAPUpredict$fit + 1.96*WAPUpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = WAPUpredict$fit - 1.96*WAPUpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "WAPU"),])
+# find inflection point (max)
+which(WAPUpredict$fit == max(WAPUpredict$fit)) #401, 401
+
+
+
+# ELKI ----
+ELKIpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "ELKI"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = ELKIpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = ELKIpredict$fit + 1.96*ELKIpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = ELKIpredict$fit - 1.96*ELKIpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "ELKI"),])
+# find inflection point (max)
+which(ELKIpredict$fit == max(ELKIpredict$fit)) #278, 278
+
+
+
+# GLAC ----
+GLACpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "GLAC"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = GLACpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = GLACpredict$fit + 1.96*GLACpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = GLACpredict$fit - 1.96*GLACpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "GLAC"),])
+# find inflection point (max)
+which(GLACpredict$fit == max(GLACpredict$fit)) #401, 401
+
+
+
+# KOUC ----
+KOUCpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "KOUC"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = KOUCpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = KOUCpredict$fit + 1.96*KOUCpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = KOUCpredict$fit - 1.96*KOUCpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "KOUC"),])
+# find inflection point (max)
+which(KOUCpredict$fit == max(KOUCpredict$fit)) #401, 401
+
+
+
+# PELE ----
+PELEpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "PELE"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = PELEpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = PELEpredict$fit + 1.96*PELEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = PELEpredict$fit - 1.96*PELEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "PELE"),])
+# find inflection point (max)
+which(PELEpredict$fit == max(PELEpredict$fit)) #401, 401
+
+
+
+# WATE ----
+WATEpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "WATE"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = WATEpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = WATEpredict$fit + 1.96*WATEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = WATEpredict$fit - 1.96*WATEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "WATE"),])
+# find inflection point (max)
+which(WATEpredict$fit == max(WATEpredict$fit)) #401, 401
+
+
+# FIVE ----
+FIVEpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "FIVE"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = FIVEpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = FIVEpredict$fit + 1.96*FIVEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = FIVEpredict$fit - 1.96*FIVEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "FIVE"),])
+# find inflection point (max)
+which(FIVEpredict$fit == max(FIVEpredict$fit)) #294, 294
+
+
+
+# IVVA ----
+IVVApredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "IVVA"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = IVVApredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = IVVApredict$fit + 1.96*IVVApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = IVVApredict$fit - 1.96*IVVApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "IVVA"),])
+# find inflection point (max)
+which(IVVApredict$fit == max(IVVApredict$fit)) #401, 401
+
+
+
+# NAHA ----
+NAHApredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "NAHA"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = NAHApredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = NAHApredict$fit + 1.96*NAHApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = NAHApredict$fit - 1.96*NAHApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "NAHA"),])
+# find inflection point (max)
+which(NAHApredict$fit == max(NAHApredict$fit)) #401, 401
+
+
+# PRIM ----
+PRIMpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "PRIM"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = PRIMpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = PRIMpredict$fit + 1.96*PRIMpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = PRIMpredict$fit - 1.96*PRIMpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "PRIM"),])
+# find inflection point (max)
+which(PRIMpredict$fit == max(PRIMpredict$fit)) #401, 401
+
+
+# WOOD ----
+WOODpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "WOOD"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = WOODpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = WOODpredict$fit + 1.96*WOODpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = WOODpredict$fit - 1.96*WOODpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "WOOD"),])
+# find inflection point (max)
+which(WOODpredict$fit == max(WOODpredict$fit)) #66, 66
+
+
+
+# FORI ----
+FORIpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "FORI"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = FORIpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = FORIpredict$fit + 1.96*FORIpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = FORIpredict$fit - 1.96*FORIpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "FORI"),])
+# find inflection point (max)
+which(FORIpredict$fit == max(FORIpredict$fit)) #401, 401
+
+
+
+# JASP ----
+JASPpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "JASP"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = JASPpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = JASPpredict$fit + 1.96*JASPpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = JASPpredict$fit - 1.96*JASPpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "JASP"),])
+# find inflection point (max)
+which(JASPpredict$fit == max(JASPpredict$fit)) #165, 165
+
+
+# NOVA ----
+NOVApredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "NOVA"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = NOVApredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = NOVApredict$fit + 1.96*NOVApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = NOVApredict$fit - 1.96*NOVApredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "NOVA"),])
+# find inflection point (max)
+which(NOVApredict$fit == max(NOVApredict$fit)) #401, 401
+
+
+
+# REVE ----
+REVEpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "REVE"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = REVEpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = REVEpredict$fit + 1.96*REVEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = REVEpredict$fit - 1.96*REVEpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "REVE"),])
+# find inflection point (max)
+which(REVEpredict$fit == max(REVEpredict$fit)) #401, 401
+
+
+
+# YOHO ----
+YOHOpredict <- predict(all_parks_model, newdata = data.frame(residuals = seq(-2, 2, 0.01),
+                                                             
+                                                             park = "YOHO"),
+                       type = "response", # to see how HWI responds to NDVI residuals
+                       se = TRUE # standard error = true --> for looking at confidence interval
+)
+
+# plot the line for the park 
+plot(y = YOHOpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250))
+# upper conf interval
+lines(y = YOHOpredict$fit + 1.96*YOHOpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# lower conf interval
+lines(y = YOHOpredict$fit - 1.96*YOHOpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
+# adding the real data into the plots of predictions 
+points(HWI ~residuals, data = hwi_ndvi[which(hwi_ndvi$park == "YOHO"),])
+# find inflection point (max)
+which(YOHOpredict$fit == max(YOHOpredict$fit)) #401, 401
+
+
+```
+
