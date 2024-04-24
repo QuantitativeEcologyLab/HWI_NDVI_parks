@@ -164,7 +164,7 @@ png(file = "figures/case_study_banff/BANFF_final.png", width = 6, height = 4, un
 # make axis title bigger
 par(cex.lab = 1.2)
 # plot the line for the park 
-plot(y = BANFpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250), xlab = "NDVI Residuals", ylab = "Monthly HWIs", col = "#EF0096", font.lab = 2)
+plot(y = BANFpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250), xlab = "NDVI Residuals", ylab = "Monthly HWIs", main = "C", col = "#EF0096", font.lab = 2)
 # upper conf interval
 lines(y = BANFpredict$fit + 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
 # lower conf interval

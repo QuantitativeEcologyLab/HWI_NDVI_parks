@@ -87,15 +87,20 @@ ggsave(banf_ndvi, filename = "figures/case_study_banff/banf_ndvi_trend.png", wid
 # make axis title bigger
 BANFpredict <- readRDS("data/models/model_results/BANFpredict.rds")
 
+png(file = "figures/case_study_banff/BANFF_plotC.png", width = 6, height = 4, units = "in", res = 600)
+# make axis title bigger
 par(cex.lab = 1.2)
 # plot the line for the park 
-plot(y = BANFpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250), xlab = "NDVI Residuals", ylab = "Monthly HWIs", col = "#EF0096", font.lab = 2)
+plot(y = BANFpredict$fit, x = seq(-2, 2, 0.01), type = "l", ylim = c(0,250), xlab = "NDVI Residuals", ylab = "Monthly HWIs", main = "C", col = "#EF0096", font.lab = 2)
 # upper conf interval
 lines(y = BANFpredict$fit + 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
 # lower conf interval
 lines(y = BANFpredict$fit - 1.96*BANFpredict$se.fit, x = seq(-2, 2, 0.01), type = "l", col = "grey60")
 # adding the real data into the plots of predictions 
 points(HWI ~residuals, data = hwi_ndvi[hwi_ndvi$park == "BANF",], pch = 16, col = alpha("#EF0096",0.3))
+# find inflection point (max)
+which(BANFpredict$fit == max(BANFpredict$fit)) #154, 154
+dev.off()
 
 #.........................................................................................
 
