@@ -21,7 +21,7 @@ banf_hwi_gam <-
               se = F) +
   scale_colour_manual(name="Park",
                       values = manual_colors) +
-  ggtitle("A") +
+  ggtitle(expression(bold("A"))) +
   xlab("Time") +
   ylab("Monthly HWI") +
   scale_y_continuous(limits = c(0, 750), expand = c(0,2))+
@@ -59,7 +59,7 @@ ggplot() +
               se = T)  +
   scale_colour_manual(name="Park",
                       values = manual_colors) +
-  ggtitle("B") +
+  ggtitle(expression(bold("B"))) +
   xlab("Time") +
   ylab("Monthly Mean NDVI") +
   scale_y_continuous(limits = c(0, 0.25), expand = c(0,0.01))+
