@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # **Overview**
 In this study, we will be modelling the monthly mean Normalized Difference Vegetation Index (NDVI) of 25 selected Canadian national parks over 22 years with the frequency of HWIs in each park over 12 years to identify trends. 
 
-```{r loading packages, message = TRUE}
+```{r loading packages, message = TRUE, warning = FALSE}
 library(ggplot2) # for plots
 library(dplyr) # for pipes
 library(lubridate) #convert whole columns to dates
@@ -36,8 +36,8 @@ library(viridis)
 library(gridExtra) # for paired plots (Banff case study)
 ```
 
-```{r loading data, echo = FALSE} 
-# these files are all obtained through the code below
+```{r loading data, echo = FALSE, warning = FALSE} 
+# these files are all obtained through the code below, they are loaded in advanced to reduce computation time
 park_coordinates <- read.csv("data/park_coordinates.csv")
 model1 <- readRDS("data/models/model1")
 provinces <- readRDS("data/shapefiles/CAprovinces_map.rds")
@@ -58,7 +58,7 @@ max <- readRDS("data/models/model_results/max")
 
 ```
 
-
+# **Data collection and visualization**
 We obtained daily human-wildlife coexistence data between 2010-2021 in 35 selected Canadian national parks and historical sites from the Government of Canada Open Government database. Among the 9 recorded incident types, only those classified as “Human Wildlife Interaction” (HWI) were selected for. Incidents that involved unknown species or NA values were further omitted from the dataset, resulting in a total of 47,626 incidents for 152 species across the 12 years in 30 parks.
 
 ```{r loading HWI data and cleaning the data, echo = TRUE}
@@ -152,7 +152,7 @@ HWI_parks <- read.csv("data/old/hwi_parks.csv")
 
 We explored the data by plotting a simple map using coordinates from Google Maps to visualise the locations of the parks, and grouped the incidents according to province, year, month, seasons, species for more data exploration.
 
-```{r data exploration visualisations, echo = TRUE}
+```{r data exploration visualisations, echo = TRUE, warning = FALSE}
 #Count number of incidents by park
 incident_count <- HWI_parks %>% 
   count(HWI_parks$park)
@@ -379,7 +379,7 @@ plot(model1, pages = 1)
 
 ```{r visualise the normal trend in Jasper, echo = TRUE, message = FALSE}
 
-# residuals of model 1
+# first 6 residuals of model 1
 head(residuals(model1))
 ```
 
@@ -1054,6 +1054,7 @@ ggsave(reprojected_new_map, filename = "figures/new_map_reprojected.png", width 
 
 
 ```
+# **Modelling trends in NDVI**
 We obtained daily ADVRR NDVI data of 5km resolution between 2010-2021 from the NOAA Climate Data Record. 
 
 ```{r downloading NDVI from 2010-2021, eval = FALSE}
@@ -1515,8 +1516,8 @@ ndvi2010_2021_gam <-
 summary(ndvi2010_2021_gam)
 plot(ndvi2010_2021_gam, pages = 1)
 
-# residuals of model 1
-residuals(ndvi2010_2021_gam)
+# first 6 residuals of model 1
+head(residuals(ndvi2010_2021_gam))
 
 # add the residuals as a new column into the HWI_grouped_species dataframe ----
 mean_ndvi_df$residuals <- residuals(ndvi2010_2021_gam)
@@ -1954,8 +1955,8 @@ summary(all_ndvi_gam)
 bam_plot <- plot(all_ndvi_gam, pages = 1, scheme = 2)
 
 
-# residuals of model 1
-residuals(all_ndvi_gam)
+# first 6 residuals of model 1
+head(residuals(all_ndvi_gam))
 
 # add the residuals as a new column into the HWI_grouped_species dataframe ----
 NDVI_2000_2021$residuals <- residuals(all_ndvi_gam)
@@ -2097,7 +2098,7 @@ saveRDS(hwi_ndvi,file ="data/hwi_ndvi.rds")
 
 ```
 
-```{r more visualisations of HWI and NDVI trends, echo = TRUE}
+```{r more visualisations of HWI and NDVI trends, echo = TRUE, warning = FALSE}
 # visualise HWI with NDVI residuals ----
 ggplot() +
   geom_hline(aes(yintercept = 0), col = "grey70", linetype = "dashed") +
@@ -2205,7 +2206,7 @@ ggplot() +
 ggsave(ndvi2000_2021, filename = "figures/supplementary/ndvi_trend.png", width = 7, height = 5, units = "in", dpi = 600, background = "white")
 
 ```
-
+# **Modelling trends in HWI**
 We fitted a GAM with a negative binomial distribution and a log link function to describe the relationship between the monthly HWIs and the NDVI residuals between 2010-2021 in each park.
 
 ```{r GAM for HWI and NDVI residuals between 2010-2021, eval = FALSE}
@@ -2229,7 +2230,7 @@ save(all_parks_model, file = "data/models/all_parks_model.rda")
 summary(all_parks_model)
 ```
 
-```{r plot the model results, echo = TRUE}
+```{r plot the model results, echo = TRUE, warning = FALSE}
 
 # plot to colour code model results by park ----
 # extract the data
